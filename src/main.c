@@ -25,17 +25,18 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    chip8.shift_quirk = true;
     if (argc == 3) {
         if (strcmp("--old", argv[2]) == 0) {
-            chip8.shift_quirk = false;
+            chip8_load_quirks(&chip8, QUIRK_PROFILE_COSMAC_VIP);
         } else if (strcmp("--new", argv[2]) == 0) {
-            chip8.shift_quirk = true;
+            chip8_load_quirks(&chip8, QUIRK_PROFILE_SCHIP_LEGACY);
+        } else if (strcmp("--ox", argv[2]) == 0) {
+            chip8_load_quirks(&chip8, QUIRK_PROFILE_MODERN);
         } else {
-            fprintf(stderr, "Unkown option: %s\n", argv[2]);
+            fprintf(stderr, "Unknown option: %s\n", argv[2]);
             return -1;
         }
-    }
+    } 
     const int INSTRUCTION_PER_FRAME = cpu_frequency_hz / TIME_FREQUENCY_HZ; // 单步执行指令数
     Window emulator_window;
     if (!window_init(&emulator_window, "CHIP8-EMULATOR", SCREEN_WIDTH, SCREEN_HEIGHT, 10)) {
@@ -45,16 +46,16 @@ int main(int argc, char* argv[])
 
     Uint64 prev_counter = SDL_GetPerformanceCounter(); // 上一帧计数器数值
     double accumulator = 0.0; // 时间累加器
-    double perf_frequenency = (double)SDL_GetPerformanceFrequency(); // 高精度计时器频率，表示系统底层计时器每秒钟跳动的次数
+    double perf_frequency = (double)SDL_GetPerformanceFrequency(); // 高精度计时器频率，表示系统底层计时器每秒钟跳动的次数
 
     bool is_running = true;
     while (is_running) {
         Uint64 curr_counter = SDL_GetPerformanceCounter();
-        double frame_time = (curr_counter - prev_counter) / perf_frequenency; // 帧时间
+        double frame_time = (curr_counter - prev_counter) / perf_frequency; // 帧时间
         prev_counter = curr_counter;
 
         if (frame_time > 0.25)
-            frame_time = 0.25; // 防止fram_tiem变得及其大，积压大量逻辑导致单帧率运算卡死
+            frame_time = 0.25; // 防止fram_tiem变得极其大，积压大量逻辑导致单帧率运算卡死
 
         accumulator += frame_time;
 
@@ -65,7 +66,7 @@ int main(int argc, char* argv[])
             for (int i = 0; i < INSTRUCTION_PER_FRAME; i++) {
                 chip8_cycle(&chip8);
             }
-            update_timers(&chip8);
+            chip8_update_timers(&chip8);
             accumulator -= FIXED_DT;
         }
         if (is_running) {

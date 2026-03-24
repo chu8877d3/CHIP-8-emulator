@@ -39,6 +39,7 @@ bool window_init(Window* display, char* title, int width, int height, int scale)
     display->audio_device = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
     if (!display->audio_device) {
         SDL_Log("Audio init failed%s", SDL_GetError());
+        return false;
     }
     display->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width * scale, height * scale, SDL_WINDOW_SHOWN);
     if (!display->window) {
@@ -91,7 +92,6 @@ void window_update_upscale(Window* display, const uint32_t* video_buffer)
 
 void window_play_sound(Window* display, uint8_t should_play)
 {
-    (void)display;
     if (should_play)
         SDL_PauseAudioDevice(display->audio_device, 0);
     else

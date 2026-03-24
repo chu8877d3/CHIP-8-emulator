@@ -11,6 +11,12 @@
 #define COLOR_BACKGROUND MAKE_RGBA(0, 5, 0, 255)
 #define COLOR_PIXEL MAKE_RGBA(0, 255, 65, 255)
 
+typedef enum {
+    QUIRK_PROFILE_COSMAC_VIP,
+    QUIRK_PROFILE_SCHIP_LEGACY,
+    QUIRK_PROFILE_MODERN
+} QuirkProfile;
+
 typedef struct
 {
     uint8_t memory[4096]; // 4k 主存 (RAM)
@@ -28,15 +34,22 @@ typedef struct
     bool state[SCREEN_SIZE]; // 64x32 显存状态缓冲区
     uint32_t video[SCREEN_SIZE]; // 64x32 单色显存
 
-    bool shift_quirk; // true 为现代模式，false 为原始模式
     bool draw_flag; // 绘图标志位
-    bool key_was_pressed;
-    int waiting_key;
+    bool key_was_pressed; // 按键是否被按下
+    int waiting_key; // 按键编号
+
+    // quirk 兼容性开关：true 为开，false 为关
+    bool shift_quirk; // 8XY6, 8XYE 两个移位怪癖，Vx = Vy >> 1 or Vx >>= 1; 是否使用Vy
+    bool loadstore_quirk; // FX55, FX65 I += X + 1 or I 不变； I是否变化
+    bool clip_quirk; // DXYN 画图是否裁剪
+    bool vf_reset_quirk; // 8XY1 8XY2 8XY3 是否保留 VF
+    bool jump_quirk; // BNNN NNN + V0 or NNN +Vx 是否变种
 } Chip8;
 
 void chip8_init(Chip8* chip8);
 bool chip8_load_rom(Chip8* chip8, const char* filename);
 void chip8_cycle(Chip8* chip8);
-void update_timers(Chip8* chip8);
+void chip8_update_timers(Chip8* chip8);
+void chip8_load_quirks(Chip8* chip8, QuirkProfile profile);
 
 #endif

@@ -37,10 +37,10 @@ static const InstructionFunc main_table[16] = {
 
 void chip8_init(Chip8* chip8)
 {
-
     memset(chip8, 0, sizeof(Chip8));
     chip8->pc = 0x200;
     chip8->waiting_key = -1;
+    chip8_load_quirks(chip8, QUIRK_PROFILE_SCHIP_LEGACY);
     memcpy(chip8->memory, fontset, sizeof(fontset));
     srand(time(NULL));
 }
@@ -54,14 +54,19 @@ bool chip8_load_rom(Chip8* chip8, const char* filename)
     }
     fseek(fp, 0, SEEK_END);
     long rom_size = ftell(fp);
-    if (rom_size > 3584) {
+    if (rom_size > 3584) { // 0x100 - 0x200 = 3584
         perror("File size is too large.");
         fclose(fp);
         return false;
     }
     rewind(fp);
-    fread(&chip8->memory[0x200], 1, rom_size, fp);
+    size_t bytes_read = fread(&chip8->memory[0x200], 1, (size_t)rom_size, fp);
     fclose(fp);
+    if (bytes_read != (size_t)rom_size) {
+        fprintf(stderr, "Error: Failed to read ROM. Read %zu%ld bytes\n",
+            bytes_read, rom_size);
+        return false;
+    }
     return true;
 }
 
@@ -75,8 +80,35 @@ void chip8_cycle(Chip8* chip8)
     main_table[index](chip8, opcode);
 }
 
-void update_timers(Chip8* chip8)
+void chip8_update_timers(Chip8* chip8)
 {
     chip8->delay_timer -= chip8->delay_timer > 0;
     chip8->sound_timer -= chip8->sound_timer > 0;
+}
+
+void chip8_load_quirks(Chip8* chip8, QuirkProfile profile)
+{
+    switch (profile) {
+    case QUIRK_PROFILE_COSMAC_VIP:
+        chip8->shift_quirk = true;
+        chip8->loadstore_quirk = true;
+        chip8->clip_quirk = true;
+        chip8->vf_reset_quirk = false;
+        chip8->jump_quirk = false;
+        break;
+    case QUIRK_PROFILE_SCHIP_LEGACY:
+        chip8->shift_quirk = false;
+        chip8->loadstore_quirk = false;
+        chip8->clip_quirk = true;
+        chip8->vf_reset_quirk = true;
+        chip8->jump_quirk = false;
+        break;
+    case QUIRK_PROFILE_MODERN:
+        chip8->shift_quirk = true;
+        chip8->loadstore_quirk = false;
+        chip8->clip_quirk = false;
+        chip8->vf_reset_quirk = true;
+        chip8->jump_quirk = false;
+        break;
+    }
 }
