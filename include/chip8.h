@@ -29,6 +29,9 @@ typedef struct
     uint32_t video[SCREEN_SIZE]; // 64x32 单色显存
 
     bool shift_quirk; // true 为现代模式，false 为原始模式
+    bool draw_flag; // 绘图标志位
+    bool key_was_pressed;
+    int waiting_key;
 } Chip8;
 
 void chip8_init(Chip8* chip8);

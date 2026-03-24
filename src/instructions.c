@@ -96,6 +96,7 @@ static const Instruction table_8[16] = {
 static inline void ins_00E0(Chip8* chip8, uint16_t opcode) // CLS
 {
     (void)opcode;
+    chip8->draw_flag = true;
     memset(chip8->state, 0, sizeof(chip8->state));
     for (int i = 0; i < SCREEN_SIZE; i++) {
         chip8->video[i] = COLOR_BACKGROUND;
@@ -192,11 +193,12 @@ void ins_CXKK(Chip8* chip8, uint16_t opcode) // RND Vx, byte
 
 void ins_DXYN(Chip8* chip8, uint16_t opcode) // DRW Vx, Vy, nibble
 {
-    uint8_t x_strart = chip8->V[extract_x(opcode)] % SCREEN_WIDTH;
+    uint8_t x_start = chip8->V[extract_x(opcode)] % SCREEN_WIDTH;
     uint8_t y_start = chip8->V[extract_y(opcode)] % SCREEN_HEIGHT;
     uint8_t nibble = extract_n(opcode);
     chip8->V[0xF] = 0;
 
+    chip8->draw_flag = true;
     for (uint8_t row = 0; row < nibble; row++) {
         if (y_start + row >= SCREEN_HEIGHT)
             break;
@@ -205,10 +207,10 @@ void ins_DXYN(Chip8* chip8, uint16_t opcode) // DRW Vx, Vy, nibble
         for (uint8_t col = 0; col < 8; col++) {
 
             if (sprite_byte & (0x80 >> col)) {
-                if (x_strart + col >= SCREEN_WIDTH)
+                if (x_start + col >= SCREEN_WIDTH)
                     continue;
 
-                int index = (x_strart + col) + (y_start + row) * SCREEN_WIDTH;
+                int index = (x_start + col) + (y_start + row) * SCREEN_WIDTH;
 
                 chip8->V[0xF] |= chip8->state[index];
 
@@ -252,19 +254,17 @@ static inline void ins_FX07(Chip8* chip8, uint16_t opcode) // LD Vx, DT
 
 static inline void ins_FX0A(Chip8* chip8, uint16_t opcode) // LD Vx, K
 {
-    static int waiting_key = -1;
-    static bool key_was_pressed = false;
-
     int pressed_key = get_currently_pressed_key(chip8);
+
     if (pressed_key >= 0) {
-        waiting_key = pressed_key;
-        key_was_pressed = true;
+        chip8->waiting_key = pressed_key;
+        chip8->key_was_pressed = true;
         chip8->pc -= 2;
     } else {
-        if (key_was_pressed) {
-            chip8->V[extract_x(opcode)] = waiting_key;
-            key_was_pressed = false;
-            waiting_key = -1;
+        if (chip8->key_was_pressed) {
+            chip8->V[extract_x(opcode)] = chip8->waiting_key;
+            chip8->key_was_pressed = false;
+            chip8->waiting_key = -1;
         } else {
             chip8->pc -= 2;
         }

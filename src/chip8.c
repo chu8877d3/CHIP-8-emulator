@@ -40,6 +40,7 @@ void chip8_init(Chip8* chip8)
 
     memset(chip8, 0, sizeof(Chip8));
     chip8->pc = 0x200;
+    chip8->waiting_key = -1;
     memcpy(chip8->memory, fontset, sizeof(fontset));
     srand(time(NULL));
 }

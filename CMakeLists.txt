@@ -39,7 +39,6 @@ endif()
 target_include_directories(chip8 PRIVATE include ${SDL2_INCLUDE_DIRS})
 
 # 6. 链接库 (Libraries)
-
 if(WIN32)
     target_link_libraries(chip8 mingw32 SDL2main SDL2::SDL2)
 else()

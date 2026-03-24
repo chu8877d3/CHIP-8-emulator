@@ -1,22 +1,21 @@
 #include "chip8.h"
 #include "window.h"
 
-SDL_Keycode keyMap[16] = {
+static SDL_Keycode key_map[16] = {
     SDLK_x, SDLK_1, SDLK_2, SDLK_3,
     SDLK_q, SDLK_w, SDLK_e, SDLK_a,
     SDLK_s, SDLK_d, SDLK_z, SDLK_c,
     SDLK_4, SDLK_r, SDLK_f, SDLK_v
 };
 
+static const int TIME_FREQUENCY_HZ = 60;
 
-const int timer_frequency_hz = 60;
-int cpu_frequency_hz = 600;
 int main(int argc, char* argv[])
 {
-    
     Chip8 chip8;
     chip8_init(&chip8);
-    
+    int cpu_frequency_hz = 600;
+
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <rom_path> [--old|--new]\n", argv[0]);
         return -1;
@@ -25,7 +24,7 @@ int main(int argc, char* argv[])
     if (!chip8_load_rom(&chip8, argv[1])) {
         return -1;
     }
-    
+
     chip8.shift_quirk = true;
     if (argc == 3) {
         if (strcmp("--old", argv[2]) == 0) {
@@ -37,43 +36,46 @@ int main(int argc, char* argv[])
             return -1;
         }
     }
-    const int instruction_count_with_s = cpu_frequency_hz / timer_frequency_hz;
-    Window display;
-    if (!window_init(&display, "CHIP8-EMULATOR", SCREEN_WIDTH, SCREEN_HEIGHT, 10)) {
+    const int INSTRUCTION_PER_FRAME = cpu_frequency_hz / TIME_FREQUENCY_HZ; // 单步执行指令数
+    Window emulator_window;
+    if (!window_init(&emulator_window, "CHIP8-EMULATOR", SCREEN_WIDTH, SCREEN_HEIGHT, 10)) {
         return 1;
     }
-    const double FIXED_DT = 1.0 / (double)timer_frequency_hz;
+    const double FIXED_DT = 1.0 / (double)TIME_FREQUENCY_HZ; // 固定时间步长
 
-    Uint64 prevCounter = SDL_GetPerformanceCounter();
-    double accmulator = 0.0;
-    double freq = (double)SDL_GetPerformanceFrequency();
+    Uint64 prev_counter = SDL_GetPerformanceCounter(); // 上一帧计数器数值
+    double accumulator = 0.0; // 时间累加器
+    double perf_frequenency = (double)SDL_GetPerformanceFrequency(); // 高精度计时器频率，表示系统底层计时器每秒钟跳动的次数
 
-    bool isRuning = true;
-    while (isRuning) {
-        Uint64 currCounter = SDL_GetPerformanceCounter();
-        double frameTime = (currCounter - prevCounter) / freq;
-        prevCounter = currCounter;
+    bool is_running = true;
+    while (is_running) {
+        Uint64 curr_counter = SDL_GetPerformanceCounter();
+        double frame_time = (curr_counter - prev_counter) / perf_frequenency; // 帧时间
+        prev_counter = curr_counter;
 
-        if (frameTime > 0.25)
-            frameTime = 0.25;
+        if (frame_time > 0.25)
+            frame_time = 0.25; // 防止fram_tiem变得及其大，积压大量逻辑导致单帧率运算卡死
 
-        accmulator += frameTime;
+        accumulator += frame_time;
 
-        isRuning = window_process_input(chip8.keypad, keyMap);
-        while (accmulator >= FIXED_DT) {
-            if (!isRuning)
+        is_running = window_process_input(chip8.keypad, key_map);
+        while (accumulator >= FIXED_DT) {
+            if (!is_running)
                 break;
-            for (int i = 0; i < instruction_count_with_s; i++) {
+            for (int i = 0; i < INSTRUCTION_PER_FRAME; i++) {
                 chip8_cycle(&chip8);
             }
             update_timers(&chip8);
-            accmulator -= FIXED_DT;
+            accumulator -= FIXED_DT;
         }
-        if (isRuning) {
-            window_play_sound(&display, chip8.sound_timer);
-            window_update_upscale(&display, chip8.video);
+        if (is_running) {
+            window_play_sound(&emulator_window, chip8.sound_timer);
+            if (chip8.draw_flag) {
+                window_update_upscale(&emulator_window, chip8.video);
+                chip8.draw_flag = false;
+            }
         }
     }
-    window_cleanup(&display);
+    window_cleanup(&emulator_window);
     return 0;
 }
