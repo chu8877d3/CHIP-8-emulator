@@ -91,7 +91,7 @@ static void ins_8XY0(Chip8* chip8, uint16_t opcode) // LD Vx, byte
 static void ins_8XY1(Chip8* chip8, uint16_t opcode) // OR Vx, Vy
 {
     chip8->V[extract_x(opcode)] |= chip8->V[extract_y(opcode)];
-    if (!chip8->vf_reset_quirk) {
+    if (chip8->vf_reset_quirk) {
         chip8->V[0xF] = 0;
     }
 }
@@ -99,7 +99,7 @@ static void ins_8XY1(Chip8* chip8, uint16_t opcode) // OR Vx, Vy
 static void ins_8XY2(Chip8* chip8, uint16_t opcode) // AND Vx, Vy
 {
     chip8->V[extract_x(opcode)] &= chip8->V[extract_y(opcode)];
-    if (!chip8->vf_reset_quirk) {
+    if (chip8->vf_reset_quirk) {
         chip8->V[0xF] = 0;
     }
 }
@@ -107,7 +107,7 @@ static void ins_8XY2(Chip8* chip8, uint16_t opcode) // AND Vx, Vy
 static void ins_8XY3(Chip8* chip8, uint16_t opcode) // XOR Vx, Vy
 {
     chip8->V[extract_x(opcode)] ^= chip8->V[extract_y(opcode)];
-    if (!chip8->vf_reset_quirk) {
+    if (chip8->vf_reset_quirk) {
         chip8->V[0xF] = 0;
     }
 }
@@ -207,12 +207,11 @@ void ins_CXKK(Chip8* chip8, uint16_t opcode) // RND Vx, byte
 
 void ins_DXYN(Chip8* chip8, uint16_t opcode) // DRW Vx, Vy, nibble
 {
-    uint8_t x_start = chip8->V[extract_x(opcode)] % SCREEN_WIDTH; // sprite 列坐标点
-    uint8_t y_start = chip8->V[extract_y(opcode)] % SCREEN_HEIGHT; // sprite 行坐标点
+    uint8_t x_start = chip8->V[extract_x(opcode)] & (SCREEN_WIDTH - 1); // sprite 列坐标点
+    uint8_t y_start = chip8->V[extract_y(opcode)] & (SCREEN_HEIGHT - 1); // sprite 行坐标点
     uint8_t nibble = extract_n(opcode); // N: sprite 的高度（row）
 
     chip8->V[0xF] = 0; // 表示当前没有发生碰撞
-
     chip8->draw_flag = true; // 标记需要刷新屏幕
 
     for (uint8_t row = 0; row < nibble; row++) { // 遍历 sprite 每一行
@@ -220,7 +219,7 @@ void ins_DXYN(Chip8* chip8, uint16_t opcode) // DRW Vx, Vy, nibble
         if (index_y >= SCREEN_HEIGHT) {
             if (chip8->clip_quirk) // 如果是裁剪模式并且超出屏幕底部， 立刻停止
                 break;
-            index_y -= SCREEN_HEIGHT; // 如果是绕回模式并且下端超出屏幕
+            index_y &= (SCREEN_HEIGHT - 1); // 如果是绕回模式并且下端超出屏幕
         }
 
         uint8_t sprite_byte = chip8->memory[chip8->I + row]; // 当前行 8bit sprite 数据 （1=画，0=不画）
@@ -232,7 +231,7 @@ void ins_DXYN(Chip8* chip8, uint16_t opcode) // DRW Vx, Vy, nibble
                 if (index_x >= SCREEN_WIDTH) {
                     if (chip8->clip_quirk) // 如果当前像素超过屏幕右边并且是裁剪模式则跳过
                         continue;
-                    index_x -= SCREEN_WIDTH; // 如果的绕回模式并且右端超出屏幕
+                    index_x &= (SCREEN_WIDTH - 1); // 如果的绕回模式并且右端超出屏幕
                 }
 
                 size_t index = index_x + index_y * SCREEN_WIDTH; // 计算当前像素在一维数组中的索引

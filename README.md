@@ -19,7 +19,7 @@ Run the emulator with a ROM file and an optional quirk flag:
 运行模拟器时需指定 ROM 路径及可选的兼容性模式：
 
 ```bash
-./chip8 <rom_path> [--old|--new]
+./chip8 <rom_path> [--old|--new|--modern]
 ```
 *   `--old`: Original behavior (COMAC VIP). / 原始模式。
 *   `--new`: Modern behavior (Shift quirk enabled, default). / 现代模式（默认）。

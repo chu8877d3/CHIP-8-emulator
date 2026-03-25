@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
             chip8_load_quirks(&chip8, QUIRK_PROFILE_COSMAC_VIP);
         } else if (strcmp("--new", argv[2]) == 0) {
             chip8_load_quirks(&chip8, QUIRK_PROFILE_SCHIP_LEGACY);
-        } else if (strcmp("--ox", argv[2]) == 0) {
+        } else if (strcmp("--modern", argv[2]) == 0) {
             chip8_load_quirks(&chip8, QUIRK_PROFILE_MODERN);
         } else {
             fprintf(stderr, "Unknown option: %s\n", argv[2]);

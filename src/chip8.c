@@ -100,14 +100,14 @@ void chip8_load_quirks(Chip8* chip8, QuirkProfile profile)
         chip8->shift_quirk = false;
         chip8->loadstore_quirk = false;
         chip8->clip_quirk = true;
-        chip8->vf_reset_quirk = true;
-        chip8->jump_quirk = false;
+        chip8->vf_reset_quirk = false;
+        chip8->jump_quirk = true;
         break;
     case QUIRK_PROFILE_MODERN:
-        chip8->shift_quirk = true;
+        chip8->shift_quirk = false;
         chip8->loadstore_quirk = false;
         chip8->clip_quirk = false;
-        chip8->vf_reset_quirk = true;
+        chip8->vf_reset_quirk = false;
         chip8->jump_quirk = false;
         break;
     }

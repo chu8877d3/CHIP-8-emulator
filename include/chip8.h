@@ -42,7 +42,7 @@ typedef struct
     bool shift_quirk; // 8XY6, 8XYE 两个移位怪癖，Vx = Vy >> 1 or Vx >>= 1; 是否使用Vy
     bool loadstore_quirk; // FX55, FX65 I += X + 1 or I 不变； I是否变化
     bool clip_quirk; // DXYN 画图是否裁剪
-    bool vf_reset_quirk; // 8XY1 8XY2 8XY3 是否保留 VF
+    bool vf_reset_quirk; // 8XY1 8XY2 8XY3 是否重置 VF
     bool jump_quirk; // BNNN NNN + V0 or NNN +Vx 是否变种
 } Chip8;
 
