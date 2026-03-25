@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 
-#define SCREEN_WIDTH 64
-#define SCREEN_HEIGHT 32
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
 #define SCREEN_SIZE (SCREEN_HEIGHT * SCREEN_WIDTH)
 #define MAKE_RGBA(r, g, b, a) (((r) << 24) | ((g) << 16) | ((b) << 8) | a)
 
@@ -19,8 +19,10 @@ typedef enum {
 
 typedef struct
 {
+    bool running;
     uint8_t memory[4096]; // 4k 主存 (RAM)
     uint8_t V[16]; // 16个通用寄存器组
+    uint8_t rpl[8]; // 8个用户寄存器（SCHIP新增）
     uint16_t I; // 16位地址寄存器
     uint16_t pc; // 16位程序计数器
 
@@ -31,13 +33,15 @@ typedef struct
     uint8_t sound_timer; // 声音定时器
 
     bool keypad[16]; // 16个十六进制按键状态
-    bool state[SCREEN_SIZE]; // 64x32 显存状态缓冲区
-    uint32_t video[SCREEN_SIZE]; // 64x32 单色显存
+    size_t width; // 显示宽度（像素）
+    size_t height; // 显示高度（像素）
+    bool state[SCREEN_SIZE]; // 显存状态缓冲区
+    uint32_t video[SCREEN_SIZE]; // 单色显存
 
     bool draw_flag; // 绘图标志位
     bool key_was_pressed; // 按键是否被按下
     int waiting_key; // 按键编号
-
+    
     // quirk 兼容性开关：true 为开，false 为关
     bool shift_quirk; // 8XY6, 8XYE 两个移位怪癖，Vx = Vy >> 1 or Vx >>= 1; 是否使用Vy
     bool loadstore_quirk; // FX55, FX65 I += X + 1 or I 不变； I是否变化

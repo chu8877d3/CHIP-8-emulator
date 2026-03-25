@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
     } 
     const int INSTRUCTION_PER_FRAME = cpu_frequency_hz / TIME_FREQUENCY_HZ; // 单步执行指令数
     Window emulator_window;
-    if (!window_init(&emulator_window, "CHIP8-EMULATOR", SCREEN_WIDTH, SCREEN_HEIGHT, 10)) {
+    if (!window_init(&emulator_window, "CHIP8-EMULATOR", 128, 64, 10)) {
         return 1;
     }
     const double FIXED_DT = 1.0 / (double)TIME_FREQUENCY_HZ; // 固定时间步长
@@ -48,8 +48,7 @@ int main(int argc, char* argv[])
     double accumulator = 0.0; // 时间累加器
     double perf_frequency = (double)SDL_GetPerformanceFrequency(); // 高精度计时器频率，表示系统底层计时器每秒钟跳动的次数
 
-    bool is_running = true;
-    while (is_running) {
+    while (chip8.running) {
         Uint64 curr_counter = SDL_GetPerformanceCounter();
         double frame_time = (curr_counter - prev_counter) / perf_frequency; // 帧时间
         prev_counter = curr_counter;
@@ -59,9 +58,9 @@ int main(int argc, char* argv[])
 
         accumulator += frame_time;
 
-        is_running = window_process_input(chip8.keypad, key_map);
+        chip8.running = window_process_input(chip8.keypad, key_map);
         while (accumulator >= FIXED_DT) {
-            if (!is_running)
+            if (!chip8.running)
                 break;
             for (int i = 0; i < INSTRUCTION_PER_FRAME; i++) {
                 chip8_cycle(&chip8);
@@ -69,10 +68,10 @@ int main(int argc, char* argv[])
             chip8_update_timers(&chip8);
             accumulator -= FIXED_DT;
         }
-        if (is_running) {
+        if (chip8.running) {
             window_play_sound(&emulator_window, chip8.sound_timer);
             if (chip8.draw_flag) {
-                window_update_upscale(&emulator_window, chip8.video);
+                window_update_upscale(&emulator_window, &chip8);
                 chip8.draw_flag = false;
             }
         }

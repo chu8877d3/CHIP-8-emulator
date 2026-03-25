@@ -27,6 +27,7 @@ bool window_init(Window* display, char* title, int width, int height, int scale)
         SDL_Log("Window %s Init failed %s", title, SDL_GetError());
         return false;
     }
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
 
     SDL_AudioSpec want, have;
     SDL_zero(want);
@@ -82,11 +83,16 @@ bool window_process_input(bool* keys, SDL_Keycode* key_map)
     return true;
 }
 
-void window_update_upscale(Window* display, const uint32_t* video_buffer)
+void window_update_upscale(Window* display, Chip8* chip8)
 {
-    SDL_UpdateTexture(display->texture, NULL, video_buffer, SCREEN_WIDTH * sizeof(uint32_t));
-    SDL_RenderClear(display->renderer);
-    SDL_RenderCopy(display->renderer, display->texture, NULL, NULL);
+    for (size_t i = 0; i < chip8->height * chip8->width; i++) {
+        chip8->video[i] = chip8->state[i] ? COLOR_PIXEL : COLOR_BACKGROUND;
+    }
+    SDL_Rect active_rect = { 0, 0, chip8->width, chip8->height };
+
+    SDL_UpdateTexture(display->texture, &active_rect, chip8->video, chip8->width * sizeof(uint32_t));
+    SDL_RenderSetLogicalSize(display->renderer, chip8->width, chip8->height);
+    SDL_RenderCopy(display->renderer, display->texture, &active_rect, NULL);
     SDL_RenderPresent(display->renderer);
 }
 

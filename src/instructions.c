@@ -12,6 +12,29 @@ static void ins_null(Chip8* chip8, uint16_t opcode)
     fprintf(stderr, "Unknown opcode: 0x%4X\n", opcode);
 }
 
+static inline void ins_00CN(Chip8* chip8, uint16_t opcode) // SCD nibble
+{
+    uint8_t nibble = extract_n(opcode);
+    for (size_t row = chip8->height - 1; row >= nibble; row--) {
+        copy_row(chip8, row, row - (size_t)nibble);
+    }
+
+    for (size_t row = 0; row < nibble; row++) {
+        remove_row(chip8, row);
+    }
+}
+
+static inline void ins_00DN(Chip8* chip8, uint16_t opcode) 
+{
+    uint8_t nibble = extract_n(opcode);
+    for (size_t row = 0; row < chip8->height - nibble; row++) {
+        copy_row(chip8, row, row + nibble);
+    }
+    for (size_t row = chip8->height - nibble; row < chip8->height; row++) {
+        remove_row(chip8, row);
+    }
+}
+
 static inline void ins_00E0(Chip8* chip8, uint16_t opcode) // CLS
 {
     (void)opcode;
@@ -29,17 +52,83 @@ static inline void ins_00EE(Chip8* chip8, uint16_t opcode) // RET
     chip8->pc = chip8->stack[chip8->sp];
 }
 
+static inline void ins_00FB(Chip8* chip8, uint16_t opcode) // SCR
+{
+    (void)opcode;
+    for (size_t col = chip8->width - 1; col >= 4; col--) {
+        copy_col(chip8, col, col - 4);
+    }
+    for (size_t col = 0; col < 4; col++) {
+        remove_col(chip8, col);
+    }
+}
+
+static inline void ins_00FC(Chip8* chip8, uint16_t opcode) // SCL
+{
+    (void)opcode;
+    for (size_t col = 0; col < chip8->width - 4; col++) {
+        copy_col(chip8, col, col + 4);
+    }
+    for (size_t col = chip8->width - 1; col >= chip8->width - 4; col--) {
+        remove_col(chip8, col);
+    }
+}
+
+static inline void ins_00FD(Chip8* chip8, uint16_t opcode) // EXIT
+{
+    (void)opcode;
+    chip8->running = false;
+}
+
+static inline void ins_00FE(Chip8* chip8, uint16_t opcode) // LOW
+{
+    (void)opcode;
+    ins_00E0(chip8, opcode);
+    chip8->width = 64;
+    chip8->height = 32;
+}
+
+static inline void ins_00FF(Chip8* chip8, uint16_t opcode) // HIGH
+{
+    (void)opcode;
+    ins_00E0(chip8, opcode);
+    chip8->width = 128;
+    chip8->height = 64;
+}
+
 // ins_0系列指令
 void ins_0_family(Chip8* chip8, uint16_t opcode)
 {
-    switch (opcode & 0X00FF) {
+    switch (opcode & 0x00FF) {
     case 0x00E0:
         ins_00E0(chip8, opcode);
         break;
     case 0x00EE:
         ins_00EE(chip8, opcode);
         break;
+    case 0x00FB:
+        ins_00FB(chip8, opcode);
+        break;
+    case 0x00FC:
+        ins_00FC(chip8, opcode);
+        break;
+    case 0x00FD:
+        ins_00FD(chip8, opcode);
+        break;
+    case 0x00FE:
+        ins_00FE(chip8, opcode);
+        break;
+    case 0x00FF:
+        ins_00FF(chip8, opcode);
+        break;
     default:
+        if ((opcode & 0x00F0) == 0x00C0) {
+            ins_00CN(chip8, opcode);
+            break;
+        } else if((opcode & 0x00F0) == 0x00D0) {
+            ins_00DN(chip8, opcode);
+            break;
+        }
         ins_null(chip8, opcode);
         break;
     }
@@ -207,40 +296,60 @@ void ins_CXKK(Chip8* chip8, uint16_t opcode) // RND Vx, byte
 
 void ins_DXYN(Chip8* chip8, uint16_t opcode) // DRW Vx, Vy, nibble
 {
-    uint8_t x_start = chip8->V[extract_x(opcode)] & (SCREEN_WIDTH - 1); // sprite 列坐标点
-    uint8_t y_start = chip8->V[extract_y(opcode)] & (SCREEN_HEIGHT - 1); // sprite 行坐标点
+    uint8_t x_start = chip8->V[extract_x(opcode)] & (chip8->width - 1); // sprite 列坐标点
+    uint8_t y_start = chip8->V[extract_y(opcode)] & (chip8->height - 1); // sprite 行坐标点
     uint8_t nibble = extract_n(opcode); // N: sprite 的高度（row）
+
+    size_t bit = 8; // sprite 的宽度
+    if (nibble == 0) {
+        if (chip8->width == 128) {
+            nibble = bit = 16;
+        } else {
+            nibble = 16;
+            bit = 8;
+        }
+    }
 
     chip8->V[0xF] = 0; // 表示当前没有发生碰撞
     chip8->draw_flag = true; // 标记需要刷新屏幕
 
     for (uint8_t row = 0; row < nibble; row++) { // 遍历 sprite 每一行
         uint8_t index_y = y_start + row;
-        if (index_y >= SCREEN_HEIGHT) {
+        if (index_y >= chip8->height) {
             if (chip8->clip_quirk) // 如果是裁剪模式并且超出屏幕底部， 立刻停止
                 break;
-            index_y &= (SCREEN_HEIGHT - 1); // 如果是绕回模式并且下端超出屏幕
+            index_y &= (chip8->height - 1); // 如果是绕回模式并且下端超出屏幕
         }
 
-        uint8_t sprite_byte = chip8->memory[chip8->I + row]; // 当前行 8bit sprite 数据 （1=画，0=不画）
+        uint8_t sprite_byte_left = bit == 16 ? chip8->memory[chip8->I + row * 2] : chip8->memory[chip8->I + row]; // 当前行 8bit sprite 数据 或 16bit 前8bit（1=画，0=不画）
+        uint8_t sprite_byte_right = bit == 16 ? chip8->memory[chip8->I + row * 2 + 1] : 0; // 16bit 后 8bit
+        for (uint8_t col = 0; col < 8; col++) { // 遍历这一行的所有像素 （通常为8或16）
 
-        for (uint8_t col = 0; col < 8; col++) { // 遍历这一行的八个像素
-
-            if (sprite_byte & (0x80 >> col)) { // 判断当前 bit 是否为1
-                uint8_t index_x = x_start + col;
-                if (index_x >= SCREEN_WIDTH) {
+            if (sprite_byte_left & (0x80 >> col)) { // 判断当前 bit 是否为1
+                size_t index_x = x_start + col;
+                if (index_x >= chip8->width) {
                     if (chip8->clip_quirk) // 如果当前像素超过屏幕右边并且是裁剪模式则跳过
                         continue;
-                    index_x &= (SCREEN_WIDTH - 1); // 如果的绕回模式并且右端超出屏幕
+                    index_x &= (chip8->width - 1); // 如果的绕回模式并且右端超出屏幕
                 }
 
-                size_t index = index_x + index_y * SCREEN_WIDTH; // 计算当前像素在一维数组中的索引
-
+                int index = index_x + index_y * chip8->width; // 计算当前像素在一维数组中的索引
                 chip8->V[0xF] |= chip8->state[index]; // 碰撞检测： 如果当前位置原来是 1 ，XOR后变为0；
-
                 chip8->state[index] ^= 1; // XOR绘制
+            }
+            if (bit == 16) {
+                if (sprite_byte_right & (0x80 >> col)) {
+                    size_t index_x = x_start + col + 8;
+                    if (index_x >= chip8->width) {
+                        if (chip8->clip_quirk)
+                            continue;
+                        index_x &= (chip8->width - 1);
+                    }
 
-                chip8->video[index] = chip8->state[index] ? COLOR_PIXEL : COLOR_BACKGROUND; // 更新实际用于显示的像素颜色
+                    int index = index_x + index_y * chip8->width;
+                    chip8->V[0xF] |= chip8->state[index];
+                    chip8->state[index] ^= 1;
+                }
             }
         }
     }
@@ -315,6 +424,11 @@ static inline void ins_FX29(Chip8* chip8, uint16_t opcode) // LD F, Vx
     chip8->I = chip8->V[extract_x(opcode)] * 5;
 }
 
+static inline void ins_FX30(Chip8* chip8, uint16_t opcode) //
+{
+    chip8->I = 0x050 + chip8->V[extract_x(opcode)] * 10;
+}
+
 static inline void ins_FX33(Chip8* chip8, uint16_t opcode) // LD B, Vx
 {
     uint8_t value = chip8->V[extract_x(opcode)];
@@ -335,11 +449,23 @@ static inline void ins_FX55(Chip8* chip8, uint16_t opcode) // LD  I, Vx
 static inline void ins_FX65(Chip8* chip8, uint16_t opcode) // LD Vx, I
 {
     uint8_t x = extract_x(opcode);
-    memcpy(chip8->V, &chip8->memory[chip8->I], x + 1);
+    memcpy(chip8->V, &chip8->memory[chip8->I], (x + 1) * sizeof(uint8_t));
 
     if (chip8->loadstore_quirk) {
         chip8->I += x + 1;
     }
+}
+
+static inline void ins_FX75(Chip8* chip8, uint16_t opcode)
+{
+    uint8_t x = extract_x(opcode) > 7 ? 7 : extract_x(opcode);
+    memcpy(chip8->rpl, chip8->V, (x + 1) * sizeof(uint8_t));
+}
+
+static inline void ins_FX85(Chip8* chip8, uint16_t opcode)
+{
+    uint8_t x = extract_x(opcode) > 7 ? 7 : extract_x(opcode);
+    memcpy(chip8->V, chip8->rpl, (x + 1) * sizeof(uint8_t));
 }
 
 void ins_F_family(Chip8* chip8, uint16_t opcode)
@@ -363,6 +489,9 @@ void ins_F_family(Chip8* chip8, uint16_t opcode)
     case 0x0029:
         ins_FX29(chip8, opcode);
         break;
+    case 0x0030:
+        ins_FX30(chip8, opcode);
+        break;
     case 0x0033:
         ins_FX33(chip8, opcode);
         break;
@@ -371,6 +500,12 @@ void ins_F_family(Chip8* chip8, uint16_t opcode)
         break;
     case 0x0065:
         ins_FX65(chip8, opcode);
+        break;
+    case 0x0075:
+        ins_FX75(chip8, opcode);
+        break;
+    case 0x0085:
+        ins_FX85(chip8, opcode);
         break;
     default:
         ins_null(chip8, opcode);
