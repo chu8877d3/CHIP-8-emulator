@@ -16,7 +16,7 @@ static inline void ins_00CN(Chip8* chip8, uint16_t opcode) // SCD nibble
 {
     uint8_t nibble = extract_n(opcode);
     for (size_t row = chip8->height - 1; row >= nibble; row--) {
-        copy_row(chip8, row, row - (size_t)nibble);
+        copy_row(chip8, row, row - nibble);
     }
 
     for (size_t row = 0; row < nibble; row++) {
@@ -48,6 +48,11 @@ static inline void ins_00E0(Chip8* chip8, uint16_t opcode) // CLS
 static inline void ins_00EE(Chip8* chip8, uint16_t opcode) // RET
 {
     (void)opcode;
+    if (chip8->sp == 0) {
+        fprintf(stderr, "Stack underflow!\n");
+        chip8->running = false;
+        return;
+    }
     chip8->sp--;
     chip8->pc = chip8->stack[chip8->sp];
 }
@@ -141,7 +146,11 @@ void ins_1NNN(Chip8* chip8, uint16_t opcode) // JP addr
 
 void ins_2NNN(Chip8* chip8, uint16_t opcode) // CALL addr
 {
-
+    if (chip8->sp >= 16) {
+        fprintf(stderr, "Stack overflow\n");
+        chip8->running = false;
+        return;
+    }
     chip8->stack[chip8->sp] = chip8->pc;
     chip8->sp++;
     chip8->pc = extract_nnn(opcode);
@@ -431,6 +440,10 @@ static inline void ins_FX30(Chip8* chip8, uint16_t opcode) //
 
 static inline void ins_FX33(Chip8* chip8, uint16_t opcode) // LD B, Vx
 {
+    if (chip8->I + 2 >= 4096) {
+        fprintf(stderr, "Memory write out of bounds\n");
+        return;
+    }
     uint8_t value = chip8->V[extract_x(opcode)];
     chip8->memory[chip8->I] = value / 100;
     chip8->memory[chip8->I + 1] = (value / 10) % 10;
@@ -440,6 +453,10 @@ static inline void ins_FX33(Chip8* chip8, uint16_t opcode) // LD B, Vx
 static inline void ins_FX55(Chip8* chip8, uint16_t opcode) // LD  I, Vx
 {
     uint8_t x = extract_x(opcode);
+    if (chip8->I + x + 1 > 4096) {
+        fprintf(stderr, "ERROR: Memory overflow in FX55! I=0x%x, x=%d\n", chip8->I, x);
+        return;
+    }
     memcpy(&chip8->memory[chip8->I], chip8->V, x + 1);
     if (chip8->loadstore_quirk) {
         chip8->I += x + 1;
@@ -449,8 +466,11 @@ static inline void ins_FX55(Chip8* chip8, uint16_t opcode) // LD  I, Vx
 static inline void ins_FX65(Chip8* chip8, uint16_t opcode) // LD Vx, I
 {
     uint8_t x = extract_x(opcode);
+    if (chip8->I + x + 1 > 4096) {
+        fprintf(stderr, "ERROR: Memory overflow in FX65! I=0x%x, x=%d\n", chip8->I, x);
+        return;
+    }
     memcpy(chip8->V, &chip8->memory[chip8->I], (x + 1) * sizeof(uint8_t));
-
     if (chip8->loadstore_quirk) {
         chip8->I += x + 1;
     }

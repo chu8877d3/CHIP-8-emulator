@@ -86,7 +86,7 @@ bool chip8_load_rom(Chip8* chip8, const char* filename)
     size_t bytes_read = fread(&chip8->memory[0x200], 1, (size_t)rom_size, fp);
     fclose(fp);
     if (bytes_read != (size_t)rom_size) {
-        fprintf(stderr, "Error: Failed to read ROM. Read %zu%ld bytes\n",
+        fprintf(stderr, "Error: Failed to read ROM. Read %zu and %ld bytes\n",
             bytes_read, rom_size);
         return false;
     }
@@ -95,6 +95,12 @@ bool chip8_load_rom(Chip8* chip8, const char* filename)
 
 void chip8_cycle(Chip8* chip8)
 {
+   if (chip8->pc >= 4094) {
+        fprintf(stderr, "ERROR: PC out of bounds! PC=0x%x\n", chip8->pc);
+        chip8->running = false;
+        return;
+    }
+
     uint16_t opcode = (chip8->memory[chip8->pc] << 8) | chip8->memory[chip8->pc + 1];
     chip8->pc += 2;
 
