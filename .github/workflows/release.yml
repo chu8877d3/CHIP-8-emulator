@@ -1,0 +1,71 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: chip8-linux
+            exe_name: chip8
+          - os: windows-latest
+            artifact_name: chip8-windows.exe
+            exe_name: chip8.exe
+          - os: macos-latest
+            artifact_name: chip8-macos
+            exe_name: chip8
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Linux 下安装 SDL2 依赖
+    - name: Install Dependencies (Linux)
+      if: runner.os == 'Linux'
+      run: sudo apt-get update && sudo apt-get install -y libsdl2-dev
+
+    # macOS 下安装 SDL2 依赖
+    - name: Install Dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: brew install sdl2
+
+    # 设置 CMake 并编译 (Windows/Linux/macOS 通用)
+    - name: Build
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+        cmake --build . --config Release
+
+    # 提取编译好的文件
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.artifact_name }}
+        path: build/${{ matrix.exe_name }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download Artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: artifacts
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          artifacts/chip8-linux/chip8
+          artifacts/chip8-windows.exe/chip8.exe
+          artifacts/chip8-macos/chip8
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
