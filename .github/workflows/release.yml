@@ -16,7 +16,7 @@ jobs:
             artifact_name: chip8-linux
             exe_name: chip8
           - os: windows-latest
-            artifact_name: chip8-windows.exe
+            artifact_name: chip8-windows
             exe_name: chip8.exe
           - os: macos-latest
             artifact_name: chip8-macos
@@ -34,18 +34,43 @@ jobs:
       if: runner.os == 'macOS'
       run: brew install sdl2
 
-    - name: Build
+    - name: Setup MSYS2 and Install SDL2 (Windows)
+      if: runner.os == 'Windows'
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        install: >-
+          mingw-w64-x86_64-gcc
+          mingw-w64-x86_64-cmake
+          mingw-w64-x86_64-sdl2
+
+    - name: Build and Stage (Linux & macOS)
+      if: runner.os != 'Windows'
       run: |
         mkdir build
         cd build
         cmake .. -DCMAKE_BUILD_TYPE=Release
         cmake --build . --config Release
+        mkdir staging
+        cp ${{ matrix.exe_name }} staging/
+
+    - name: Build, Extract DLL and Stage (Windows)
+      if: runner.os == 'Windows'
+      shell: msys2 {0}
+      run: |
+        mkdir build
+        cd build
+        cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+        cmake --build .
+        mkdir staging
+        cp ${{ matrix.exe_name }} staging/
+        cp /mingw64/bin/SDL2.dll staging/
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.artifact_name }}
-        path: build/${{ matrix.exe_name }}
+        path: build/staging/
 
   release:
     needs: build
@@ -56,12 +81,19 @@ jobs:
       with:
         path: artifacts
 
+    - name: Zip Artifacts for Release
+      run: |
+        cd artifacts
+        zip -r chip8-windows.zip chip8-windows/
+        zip -r chip8-linux.zip chip8-linux/
+        zip -r chip8-macos.zip chip8-macos/
+
     - name: Create Release
-      uses: softprops/action-gh-release@v2 
+      uses: softprops/action-gh-release@v2
       with:
         files: |
-          artifacts/chip8-linux/chip8
-          artifacts/chip8-windows.exe/chip8.exe
-          artifacts/chip8-macos/chip8
+          artifacts/chip8-windows.zip
+          artifacts/chip8-linux.zip
+          artifacts/chip8-macos.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
