@@ -3,7 +3,7 @@ name: Build and Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 permissions:
   contents: write
@@ -26,78 +26,78 @@ jobs:
             exe_name: chip8
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Install Dependencies (Linux)
-      if: runner.os == 'Linux'
-      run: sudo apt-get update && sudo apt-get install -y libsdl2-dev
+      - name: Install Dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libsdl2-dev
 
-    - name: Install Dependencies (macOS)
-      if: runner.os == 'macOS'
-      run: brew install sdl2
+      - name: Install Dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install sdl2
 
-    - name: Setup MSYS2 and Install SDL2 (Windows)
-      if: runner.os == 'Windows'
-      uses: msys2/setup-msys2@v2
-      with:
-        msystem: MINGW64
-        install: >-
-          mingw-w64-x86_64-gcc
-          mingw-w64-x86_64-cmake
-          mingw-w64-x86_64-make
-          mingw-w64-x86_64-SDL2
+      - name: Setup MSYS2 and Install SDL2 (Windows)
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-make
+            mingw-w64-x86_64-SDL2
 
-    - name: Build and Stage (Linux & macOS)
-      if: runner.os != 'Windows'
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release
-        cmake --build . --config Release
-        mkdir staging
-        cp ${{ matrix.exe_name }} staging/
+      - name: Build and Stage (Linux & macOS)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake --build . --config Release
+          mkdir staging
+          cp ${{ matrix.exe_name }} staging/
 
-    - name: Build, Extract DLL and Stage (Windows)
-      if: runner.os == 'Windows'
-      shell: msys2 {0}
-      run: |
-        mkdir build
-        cd build
-        cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
-        cmake --build .
-        mkdir staging
-        cp ${{ matrix.exe_name }} staging/
-        cp /mingw64/bin/SDL2.dll staging/
+      - name: Build, Extract DLL and Stage (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          mkdir build
+          cd build
+          cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+          cmake --build .
+          mkdir staging
+          cp ${{ matrix.exe_name }} staging/
+          cp /mingw64/bin/SDL2.dll staging/
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ matrix.artifact_name }}
-        path: build/staging/
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: build/staging/
 
   release:
     needs: build
     runs-on: ubuntu-latest
     steps:
-    - name: Download Artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: artifacts
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
 
-    - name: Zip Artifacts for Release
-      run: |
-        cd artifacts
-        zip -r chip8-windows.zip chip8-windows/
-        zip -r chip8-linux.zip chip8-linux/
-        zip -r chip8-macos.zip chip8-macos/
+      - name: Zip Artifacts for Release
+        run: |
+          cd artifacts
+          zip -r chip8-windows.zip chip8-windows/
+          zip -r chip8-linux.zip chip8-linux/
+          zip -r chip8-macos.zip chip8-macos/
 
-    - name: Create Release
-      uses: softprops/action-gh-release@v2
-      with:
-        files: |
-          artifacts/chip8-windows.zip
-          artifacts/chip8-linux.zip
-          artifacts/chip8-macos.zip
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/chip8-windows.zip
+            artifacts/chip8-linux.zip
+            artifacts/chip8-macos.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

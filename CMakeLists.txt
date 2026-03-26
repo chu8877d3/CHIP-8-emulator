@@ -11,21 +11,21 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 find_package(SDL2 REQUIRED)
 
 # 定义构建目标目标 (Target)
-add_executable(chip8 
+add_executable(chip8
     src/main.c
     src/chip8.c
-    src/instructions.c 
+    src/instructions.c
     src/window.c
 
     include/chip8.h
-    include/instructions.h 
+    include/instructions.h
     include/window.h
 )
 
 # 为已定义的目标配置编译选项 (Compile Options)
 if(MSVC)
     # 针对 Visual Studio 编译器
-    target_compile_options(chip8 PRIVATE /Wall /WX) 
+    target_compile_options(chip8 PRIVATE /Wall /WX)
 else()
     # 针对 GCC / Clang / MinGW 编译器
     target_compile_options(chip8 PRIVATE -Wall -Wextra -Werror)
