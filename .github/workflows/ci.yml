@@ -48,3 +48,10 @@ jobs:
         run: |
           cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
           cmake --build build --config Release
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+            name: chip8-${{ runner.os }}
+            path: |
+              build/**/chip8
+              build/**/chip8.exe
