@@ -74,6 +74,9 @@ int main(int argc, char* argv[])
                 window_update_upscale(&emulator_window, &chip8);
                 chip8.draw_flag = false;
             }
+            if (accumulator < FIXED_DT) {
+                SDL_Delay(1);
+            }
         }
     }
     window_cleanup(&emulator_window);

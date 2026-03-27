@@ -26,9 +26,17 @@ add_executable(chip8
 if(MSVC)
     # 针对 Visual Studio 编译器
     target_compile_options(chip8 PRIVATE /Wall /WX)
+    target_compile_options(chip8 PRIVATE $<$<CONFIG:Release>:/O2>)
 else()
     # 针对 GCC / Clang / MinGW 编译器
     target_compile_options(chip8 PRIVATE -Wall -Wextra -Werror)
+    target_compile_options(chip8 PRIVATE $<$<CONFIG:Release>:-O3>)
+endif()
+
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ipo_supported OUTPUT ipo_error)
+if(ipo_supported)
+    set_property(TARGET chip8 PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
 endif()
 
 # 指定头文件路径

@@ -1,6 +1,7 @@
 # CHIP-8 Emulator
 
 [![Build and Release](https://github.com/chu8877d3/chip-8-emulator/actions/workflows/release.yml/badge.svg)](https://github.com/chu8877d3/chip-8-emulator/actions/workflows/release.yml)
+[![CI](https://github.com/chu8877d3/chip-8-emulator/actions/workflows/ci.yml/badge.svg)](https://github.com/chu8877d3/chip-8-emulator/actions/workflows/ci.yml)
 
 ### 1. Introduction / 简介
 A simple CHIP-8 emulator implemented in C23 and SDL2.  
