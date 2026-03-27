@@ -1,6 +1,29 @@
 #include "window.h"
 #include <math.h>
 
+static inline int map_keycode_to_chip8(SDL_Keycode pressed_key)
+{
+    switch (pressed_key) {
+    case SDLK_x: return 0x0;
+    case SDLK_1: return 0x1;
+    case SDLK_2: return 0x2;
+    case SDLK_3: return 0x3;
+    case SDLK_q: return 0x4;
+    case SDLK_w: return 0x5;
+    case SDLK_e: return 0x6;
+    case SDLK_a: return 0x7;
+    case SDLK_s: return 0x8;
+    case SDLK_d: return 0x9;
+    case SDLK_z: return 0xA;
+    case SDLK_c: return 0xB;
+    case SDLK_4: return 0xC;
+    case SDLK_r: return 0xD;
+    case SDLK_f: return 0xE;
+    case SDLK_v: return 0xF;
+    default: return -1;
+    }
+}
+
 static void audio_callback(void* userdata, Uint8* stream, int len)
 {
     (void)userdata;
@@ -65,18 +88,20 @@ bool window_init(Window* display, char* title, int width, int height, int scale)
 
 bool window_process_input(bool* keys, SDL_Keycode* key_map)
 {
+    (void)key_map;
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT)
             return false;
         if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
+            if (event.type == SDL_KEYDOWN && event.key.repeat != 0) {
+                continue;
+            }
+
             bool state = (event.type == SDL_KEYDOWN) ? 1 : 0;
-            SDL_Keycode pressed_key = event.key.keysym.sym;
-            for (int i = 0; i < 16; i++) {
-                if (pressed_key == key_map[i]) {
-                    keys[i] = state;
-                    break;
-                }
+            int key_index = map_keycode_to_chip8(event.key.keysym.sym);
+            if (key_index >= 0) {
+                keys[key_index] = state;
             }
         }
     }
@@ -85,8 +110,11 @@ bool window_process_input(bool* keys, SDL_Keycode* key_map)
 
 void window_update_upscale(Window* display, Chip8* chip8)
 {
-    for (size_t i = 0; i < chip8->height * chip8->width; i++) {
-        chip8->video[i] = chip8->state[i] ? COLOR_PIXEL : COLOR_BACKGROUND;
+    const size_t pixel_count = chip8->height * chip8->width;
+    uint32_t* video = chip8->video;
+    const bool* state = chip8->state;
+    for (size_t i = 0; i < pixel_count; i++) {
+        video[i] = state[i] ? COLOR_PIXEL : COLOR_BACKGROUND;
     }
     SDL_Rect active_rect = { 0, 0, chip8->width, chip8->height };
 

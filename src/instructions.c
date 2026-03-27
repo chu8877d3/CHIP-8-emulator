@@ -15,24 +15,37 @@ static void ins_null(Chip8* chip8, uint16_t opcode)
 static inline void ins_00CN(Chip8* chip8, uint16_t opcode) // SCD nibble
 {
     uint8_t nibble = extract_n(opcode);
-    for (size_t row = chip8->height - 1; row >= nibble; row--) {
-        copy_row(chip8, row, row - nibble);
+    if (nibble == 0) {
+        return;
     }
 
-    for (size_t row = 0; row < nibble; row++) {
-        remove_row(chip8, row);
+    if (nibble >= chip8->height) {
+        memset(chip8->state, 0, chip8->width * chip8->height * sizeof(bool));
+        return;
     }
+
+    size_t row_width = chip8->width;
+    size_t row_count = chip8->height - nibble;
+    memmove(&chip8->state[nibble * row_width], chip8->state, row_count * row_width * sizeof(bool));
+    memset(chip8->state, 0, nibble * row_width * sizeof(bool));
 }
 
 static inline void ins_00DN(Chip8* chip8, uint16_t opcode) 
 {
     uint8_t nibble = extract_n(opcode);
-    for (size_t row = 0; row < chip8->height - nibble; row++) {
-        copy_row(chip8, row, row + nibble);
+    if (nibble == 0) {
+        return;
     }
-    for (size_t row = chip8->height - nibble; row < chip8->height; row++) {
-        remove_row(chip8, row);
+
+    if (nibble >= chip8->height) {
+        memset(chip8->state, 0, chip8->width * chip8->height * sizeof(bool));
+        return;
     }
+
+    size_t row_width = chip8->width;
+    size_t row_count = chip8->height - nibble;
+    memmove(chip8->state, &chip8->state[nibble * row_width], row_count * row_width * sizeof(bool));
+    memset(&chip8->state[row_count * row_width], 0, nibble * row_width * sizeof(bool));
 }
 
 static inline void ins_00E0(Chip8* chip8, uint16_t opcode) // CLS
@@ -60,22 +73,32 @@ static inline void ins_00EE(Chip8* chip8, uint16_t opcode) // RET
 static inline void ins_00FB(Chip8* chip8, uint16_t opcode) // SCR
 {
     (void)opcode;
-    for (size_t col = chip8->width - 1; col >= 4; col--) {
-        copy_col(chip8, col, col - 4);
+    const size_t shift = 4;
+    if (chip8->width <= shift) {
+        memset(chip8->state, 0, chip8->width * chip8->height * sizeof(bool));
+        return;
     }
-    for (size_t col = 0; col < 4; col++) {
-        remove_col(chip8, col);
+
+    for (size_t row = 0; row < chip8->height; row++) {
+        bool* row_ptr = &chip8->state[row * chip8->width];
+        memmove(row_ptr + shift, row_ptr, (chip8->width - shift) * sizeof(bool));
+        memset(row_ptr, 0, shift * sizeof(bool));
     }
 }
 
 static inline void ins_00FC(Chip8* chip8, uint16_t opcode) // SCL
 {
     (void)opcode;
-    for (size_t col = 0; col < chip8->width - 4; col++) {
-        copy_col(chip8, col, col + 4);
+    const size_t shift = 4;
+    if (chip8->width <= shift) {
+        memset(chip8->state, 0, chip8->width * chip8->height * sizeof(bool));
+        return;
     }
-    for (size_t col = chip8->width - 1; col >= chip8->width - 4; col--) {
-        remove_col(chip8, col);
+
+    for (size_t row = 0; row < chip8->height; row++) {
+        bool* row_ptr = &chip8->state[row * chip8->width];
+        memmove(row_ptr, row_ptr + shift, (chip8->width - shift) * sizeof(bool));
+        memset(row_ptr + (chip8->width - shift), 0, shift * sizeof(bool));
     }
 }
 
