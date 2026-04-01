@@ -51,7 +51,7 @@ endif()
 target_include_directories(Chip8Emulator PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include/core
     ${CMAKE_CURRENT_SOURCE_DIR}/include/frontend
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/sysS
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/sys
 )
 
 # 链接库
