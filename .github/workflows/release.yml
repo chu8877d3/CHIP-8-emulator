@@ -30,11 +30,9 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update && sudo apt-get install -y libsdl2-dev zenity
-
       - name: Install Dependencies (macOS)
         if: runner.os == 'macOS'
         run: brew install sdl2
-
       - name: Setup MSYS2 (Windows)
         if: runner.os  == 'Windows'
         uses: msys2/setup-msys2@v2
@@ -59,12 +57,21 @@ jobs:
           cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
           cmake --build build --config Release
 
-      - name: Package with CPack
+      - name: Package with CPack (Unix)
+        if: runner.os != 'Windows'
         shell: bash
         run: |
           cd build
           cpack -G ZIP
-          mv CHIP-8-Emulator-*.zip chip8-emulator-${{ matrix.sys_name }}.zip
+          mv *.zip chip8-emulator-${{ matrix.sys_name }}.zip
+
+      - name: Package with CPack (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          cd build
+          cpack -G ZIP
+          mv *.zip chip8-emulator-${{ matrix.sys_name }}.zip
 
       - name: Upload to Release
         uses: softprops/action-gh-release@v2

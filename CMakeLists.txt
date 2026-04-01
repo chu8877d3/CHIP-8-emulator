@@ -24,17 +24,20 @@ set(SOURCES
 
 add_executable(Chip8Emulator ${SOURCES})
 
-add_library(tinyfd STATIC vendor/tinyfd/tinyfiledialogs.c)
-target_include_directories(tinyfd PUBLIC vendor/tinyfd)
 
-# 为已定义的目标配置编译选项 (Compile Options)
+add_library(tinyfd_lib STATIC vendor/tinyfd/tinyfiledialogs.c)
+target_include_directories(tinyfd_lib PUBLIC vendor/tinyfd)
+
+add_library(nuklear_lib STATIC vendor/nuklear/nuklear_impl.c)
+target_include_directories(nuklear_lib PUBLIC vendor/nuklear)
+
+# 为已定义的目标配置编译选项
 if(MSVC)
-    # 针对 Visual Studio 编译器
     target_compile_options(Chip8Emulator PRIVATE /Wall /WX)
     target_compile_options(Chip8Emulator PRIVATE $<$<CONFIG:Release>:/O2>)
 else()
-    # 针对 GCC / Clang / MinGW 编译器
-    target_compile_options(Chip8Emulator PRIVATE -Wall -Wextra -Werror)
+    # 启用严格警告，但屏蔽第三方库 Nuklear 常见的未使用变量警告
+    target_compile_options(Chip8Emulator PRIVATE -Wall -Wextra -Werror -Wno-unused-but-set-variable)
     target_compile_options(Chip8Emulator PRIVATE $<$<CONFIG:Release>:-O3>)
 endif()
 
@@ -44,22 +47,18 @@ if(ipo_supported)
     set_property(TARGET Chip8Emulator PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
 endif()
 
-#指定头文件路径
+# 指定头文件路径
 target_include_directories(Chip8Emulator PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include/core
     ${CMAKE_CURRENT_SOURCE_DIR}/include/frontend
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/sys
-    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/nuklear
-    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/tinyfd
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/sysS
 )
 
-target_include_directories(Chip8Emulator SYSTEM PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/nuklear
-    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/tinyfd)
-# 链接库 (Libraries)
+# 链接库
 if(WIN32)
     target_link_libraries(Chip8Emulator
-        tinyfd
+        tinyfd_lib
+        nuklear_lib
         mingw32
         SDL2main
         SDL2::SDL2
@@ -70,27 +69,26 @@ if(WIN32)
         uuid
     )
 elseif(APPLE)
-    target_link_libraries(Chip8Emulator SDL2::SDL2
-        tinyfd
+    target_link_libraries(Chip8Emulator
+        SDL2::SDL2
+        tinyfd_lib
+        nuklear_lib
         "-framework Cocoa"
     )
 else()
     target_link_libraries(Chip8Emulator
         SDL2::SDL2
-        tinyfd
+        nuklear_lib
+        tinyfd_lib
         m
         pthread
     )
 endif()
 
-# 11. 安装规则 (Installation)
-install(TARGETS Chip8Emulator
-    RUNTIME DESTINATION bin
-)
+# 安装规则
+install(TARGETS Chip8Emulator RUNTIME DESTINATION bin)
 
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/roms/
-    DESTINATION bin/roms
-)
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/roms/ DESTINATION bin/roms)
 
 install(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/README.md
@@ -98,7 +96,7 @@ install(FILES
     DESTINATION .
 )
 
-# 12. 运行时依赖处理 (仅限 Windows/CMake 3.21+)
+# 运行时依赖处理 (Windows)
 if(WIN32)
     install(TARGETS Chip8Emulator
         RUNTIME_DEPENDENCY_SET chip8_deps
@@ -106,7 +104,7 @@ if(WIN32)
     )
 endif()
 
-# 13. CPack 打包配置
+# CPack 打包配置
 set(CPACK_PACKAGE_NAME "CHIP-8-Emulator")
 set(CPACK_PACKAGE_VENDOR "chu8877d3")
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
