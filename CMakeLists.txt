@@ -53,6 +53,9 @@ target_include_directories(Chip8Emulator PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/tinyfd
 )
 
+target_include_directories(Chip8Emulator SYSTEM PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/nuklear
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/tinyfd)
 # 链接库 (Libraries)
 if(WIN32)
     target_link_libraries(Chip8Emulator
