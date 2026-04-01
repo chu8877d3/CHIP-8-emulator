@@ -123,21 +123,21 @@ static inline void top_menubor_render(nk_ctx_t* ctx, AppContext* app)
         if (nk_menu_begin_label(ctx, "File", NK_TEXT_LEFT, nk_vec2(120, 130))) { /*  file */
             nk_layout_row_dynamic(ctx, 25, 1);
 
-            if (nk_menu_item_label(ctx, "Open ROM", NK_TEXT_LEFT)) { // open rom
+            if (nk_menu_item_label(ctx, "Open ROM", NK_TEXT_LEFT)) {  // open rom
                 handle_rom_loading(app);
             }
-
-            if (nk_menu_item_label(ctx, "Load Directory", NK_TEXT_LEFT)) { // load dir
+            nk_widget_disable_begin(ctx);  // 未开发
+            if (nk_menu_item_label(ctx, "Load Directory", NK_TEXT_LEFT)) {  // load dir
                 handle_romdir_show(app);
             }
-
+            nk_widget_disable_end(ctx);
             if (app_state == STATE_IDLE) nk_widget_disable_begin(ctx);
-            if (nk_menu_item_label(ctx, "Close ROM", NK_TEXT_LEFT)) { // close
+            if (nk_menu_item_label(ctx, "Close ROM", NK_TEXT_LEFT)) {  // close
                 app_request_unload_rom(app);
             }
             if (app_state == STATE_IDLE) nk_widget_disable_end(ctx);
 
-            if (nk_menu_item_label(ctx, "Exit", NK_TEXT_LEFT)) { // exit
+            if (nk_menu_item_label(ctx, "Exit", NK_TEXT_LEFT)) {  // exit
                 app->is_running = false;
             }
             nk_menu_end(ctx);
@@ -148,11 +148,11 @@ static inline void top_menubor_render(nk_ctx_t* ctx, AppContext* app)
 
             if (app_state == STATE_IDLE) nk_widget_disable_begin(ctx);
             if (nk_menu_item_label(ctx, app->state == STATE_PAUSED ? "Resume" : "Pause",
-                                   NK_TEXT_LEFT)) { // pause / continue
+                                   NK_TEXT_LEFT)) {  // pause / continue
                 app_pause_or_resume(app);
             }
 
-            if (nk_menu_item_label(ctx, "Restart", NK_TEXT_LEFT)) { // restart
+            if (nk_menu_item_label(ctx, "Restart", NK_TEXT_LEFT)) {  // restart
                 chip8_restart(&app->chip8);
             }
             if (app_state != STATE_IDLE) nk_widget_disable_end(ctx);
