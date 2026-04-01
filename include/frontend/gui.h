@@ -5,7 +5,6 @@ struct nk_font_atlas;
 struct nk_context;
 struct AppContext;
 
-
 #include "chip8.h"
 #include "nuklear.h"
 #include "nuklear_sdl_renderer.h"

@@ -15,9 +15,7 @@ static void ins_null(Chip8* chip8, uint16_t opcode)
 static inline void ins_00CN(Chip8* chip8, uint16_t opcode) // SCD nibble
 {
     uint8_t nibble = extract_n(opcode);
-    if (nibble == 0) {
-        return;
-    }
+    if (nibble == 0) { return; }
 
     if (nibble >= chip8->height) {
         memset(chip8->state, 0, chip8->width * chip8->height * sizeof(bool));
@@ -30,12 +28,10 @@ static inline void ins_00CN(Chip8* chip8, uint16_t opcode) // SCD nibble
     memset(chip8->state, 0, nibble * row_width * sizeof(bool));
 }
 
-static inline void ins_00DN(Chip8* chip8, uint16_t opcode) 
+static inline void ins_00DN(Chip8* chip8, uint16_t opcode)
 {
     uint8_t nibble = extract_n(opcode);
-    if (nibble == 0) {
-        return;
-    }
+    if (nibble == 0) { return; }
 
     if (nibble >= chip8->height) {
         memset(chip8->state, 0, chip8->width * chip8->height * sizeof(bool));
@@ -150,7 +146,7 @@ void ins_0_family(Chip8* chip8, uint16_t opcode)
         if ((opcode & 0x00F0) == 0x00C0) {
             ins_00CN(chip8, opcode);
             break;
-        } else if((opcode & 0x00F0) == 0x00D0) {
+        } else if ((opcode & 0x00F0) == 0x00D0) {
             ins_00DN(chip8, opcode);
             break;
         }
@@ -160,9 +156,7 @@ void ins_0_family(Chip8* chip8, uint16_t opcode)
 }
 
 void ins_1NNN(Chip8* chip8, uint16_t opcode) // JP addr
-{
-    chip8->pc = extract_nnn(opcode);
-}
+{ chip8->pc = extract_nnn(opcode); }
 
 void ins_2NNN(Chip8* chip8, uint16_t opcode) // CALL addr
 {
@@ -177,57 +171,39 @@ void ins_2NNN(Chip8* chip8, uint16_t opcode) // CALL addr
 }
 
 void ins_3XKK(Chip8* chip8, uint16_t opcode) // SE Vx, byte
-{
-    chip8->pc += (chip8->V[extract_x(opcode)] == extract_kk(opcode)) * 2;
-}
+{ chip8->pc += (chip8->V[extract_x(opcode)] == extract_kk(opcode)) * 2; }
 
 void ins_4XKK(Chip8* chip8, uint16_t opcode) // SNE Vx, Byte
-{
-    chip8->pc += (chip8->V[extract_x(opcode)] != extract_kk(opcode)) * 2;
-}
+{ chip8->pc += (chip8->V[extract_x(opcode)] != extract_kk(opcode)) * 2; }
 
 void ins_5XY0(Chip8* chip8, uint16_t opcode) // SR Vx, Vy
-{
-    chip8->pc += (chip8->V[extract_x(opcode)] == chip8->V[extract_y(opcode)]) * 2;
-}
+{ chip8->pc += (chip8->V[extract_x(opcode)] == chip8->V[extract_y(opcode)]) * 2; }
 
 void ins_6XKK(Chip8* chip8, uint16_t opcode) // LD Vx, byte
-{
-    chip8->V[extract_x(opcode)] = extract_kk(opcode);
-}
+{ chip8->V[extract_x(opcode)] = extract_kk(opcode); }
 
 void ins_7XKK(Chip8* chip8, uint16_t opcode) // ADD Vx, byte
-{
-    chip8->V[extract_x(opcode)] += extract_kk(opcode);
-}
+{ chip8->V[extract_x(opcode)] += extract_kk(opcode); }
 
 static void ins_8XY0(Chip8* chip8, uint16_t opcode) // LD Vx, byte
-{
-    chip8->V[extract_x(opcode)] = chip8->V[extract_y(opcode)];
-}
+{ chip8->V[extract_x(opcode)] = chip8->V[extract_y(opcode)]; }
 
 static void ins_8XY1(Chip8* chip8, uint16_t opcode) // OR Vx, Vy
 {
     chip8->V[extract_x(opcode)] |= chip8->V[extract_y(opcode)];
-    if (chip8->vf_reset_quirk) {
-        chip8->V[0xF] = 0;
-    }
+    if (chip8->vf_reset_quirk) { chip8->V[0xF] = 0; }
 }
 
 static void ins_8XY2(Chip8* chip8, uint16_t opcode) // AND Vx, Vy
 {
     chip8->V[extract_x(opcode)] &= chip8->V[extract_y(opcode)];
-    if (chip8->vf_reset_quirk) {
-        chip8->V[0xF] = 0;
-    }
+    if (chip8->vf_reset_quirk) { chip8->V[0xF] = 0; }
 }
 
 static void ins_8XY3(Chip8* chip8, uint16_t opcode) // XOR Vx, Vy
 {
     chip8->V[extract_x(opcode)] ^= chip8->V[extract_y(opcode)];
-    if (chip8->vf_reset_quirk) {
-        chip8->V[0xF] = 0;
-    }
+    if (chip8->vf_reset_quirk) { chip8->V[0xF] = 0; }
 }
 
 static void ins_8XY4(Chip8* chip8, uint16_t opcode) // ADD Vx, Vy
@@ -285,10 +261,8 @@ static void ins_8XYE(Chip8* chip8, uint16_t opcode) // SHL Vx, Vy
 }
 
 static const Instruction table_8[16] = { // ins_8系列指令函数指针分派表
-    ins_8XY0, ins_8XY1, ins_8XY2, ins_8XY3,
-    ins_8XY4, ins_8XY5, ins_8XY6, ins_8XY7,
-    ins_null, ins_null, ins_null, ins_null,
-    ins_null, ins_null, ins_8XYE, ins_null
+    ins_8XY0, ins_8XY1, ins_8XY2, ins_8XY3, ins_8XY4, ins_8XY5, ins_8XY6, ins_8XY7,
+    ins_null, ins_null, ins_null, ins_null, ins_null, ins_null, ins_8XYE, ins_null
 };
 
 // ins_8系列指令
@@ -299,14 +273,10 @@ void ins_8_family(Chip8* chip8, uint16_t opcode)
 }
 
 void ins_9XY0(Chip8* chip8, uint16_t opcode) // SNE Vx, Vy
-{
-    chip8->pc += (chip8->V[extract_x(opcode)] != chip8->V[extract_y(opcode)]) * 2;
-}
+{ chip8->pc += (chip8->V[extract_x(opcode)] != chip8->V[extract_y(opcode)]) * 2; }
 
 void ins_ANNN(Chip8* chip8, uint16_t opcode) // LE l, addr
-{
-    chip8->I = extract_nnn(opcode);
-}
+{ chip8->I = extract_nnn(opcode); }
 
 void ins_BNNN(Chip8* chip8, uint16_t opcode) // JP V0, addr
 {
@@ -319,9 +289,7 @@ void ins_BNNN(Chip8* chip8, uint16_t opcode) // JP V0, addr
 }
 
 void ins_CXKK(Chip8* chip8, uint16_t opcode) // RND Vx, byte
-{
-    chip8->V[extract_x(opcode)] = extract_kk(opcode) & rand() % 256;
-}
+{ chip8->V[extract_x(opcode)] = extract_kk(opcode) & rand() % 256; }
 
 void ins_DXYN(Chip8* chip8, uint16_t opcode) // DRW Vx, Vy, nibble
 {
@@ -350,7 +318,9 @@ void ins_DXYN(Chip8* chip8, uint16_t opcode) // DRW Vx, Vy, nibble
             index_y &= (chip8->height - 1); // 如果是绕回模式并且下端超出屏幕
         }
 
-        uint8_t sprite_byte_left = bit == 16 ? chip8->memory[chip8->I + row * 2] : chip8->memory[chip8->I + row]; // 当前行 8bit sprite 数据 或 16bit 前8bit（1=画，0=不画）
+        uint8_t sprite_byte_left = bit == 16
+            ? chip8->memory[chip8->I + row * 2]
+            : chip8->memory[chip8->I + row]; // 当前行 8bit sprite 数据 或 16bit 前8bit（1=画，0=不画）
         uint8_t sprite_byte_right = bit == 16 ? chip8->memory[chip8->I + row * 2 + 1] : 0; // 16bit 后 8bit
         for (uint8_t col = 0; col < 8; col++) { // 遍历这一行的所有像素 （通常为8或16）
 
@@ -370,8 +340,7 @@ void ins_DXYN(Chip8* chip8, uint16_t opcode) // DRW Vx, Vy, nibble
                 if (sprite_byte_right & (0x80 >> col)) {
                     size_t index_x = x_start + col + 8;
                     if (index_x >= (size_t)chip8->width) {
-                        if (chip8->clip_quirk)
-                            continue;
+                        if (chip8->clip_quirk) continue;
                         index_x &= (chip8->width - 1);
                     }
 
@@ -410,9 +379,7 @@ void ins_E_family(Chip8* chip8, uint16_t opcode)
 }
 
 static inline void ins_FX07(Chip8* chip8, uint16_t opcode) // LD Vx, DT
-{
-    chip8->V[extract_x(opcode)] = chip8->delay_timer;
-}
+{ chip8->V[extract_x(opcode)] = chip8->delay_timer; }
 
 static inline void ins_FX0A(Chip8* chip8, uint16_t opcode) // LD Vx, K
 {
@@ -434,29 +401,19 @@ static inline void ins_FX0A(Chip8* chip8, uint16_t opcode) // LD Vx, K
 }
 
 static inline void ins_FX15(Chip8* chip8, uint16_t opcode) // LD DT, Vx
-{
-    chip8->delay_timer = chip8->V[extract_x(opcode)];
-}
+{ chip8->delay_timer = chip8->V[extract_x(opcode)]; }
 
 static inline void ins_Fx18(Chip8* chip8, uint16_t opcode) // LD ST, Vx
-{
-    chip8->sound_timer = chip8->V[extract_x(opcode)];
-}
+{ chip8->sound_timer = chip8->V[extract_x(opcode)]; }
 
 static inline void ins_FX1E(Chip8* chip8, uint16_t opcode) // ADD I, Vx
-{
-    chip8->I += chip8->V[extract_x(opcode)];
-}
+{ chip8->I += chip8->V[extract_x(opcode)]; }
 
 static inline void ins_FX29(Chip8* chip8, uint16_t opcode) // LD F, Vx
-{
-    chip8->I = chip8->V[extract_x(opcode)] * 5;
-}
+{ chip8->I = chip8->V[extract_x(opcode)] * 5; }
 
 static inline void ins_FX30(Chip8* chip8, uint16_t opcode) //
-{
-    chip8->I = 0x050 + chip8->V[extract_x(opcode)] * 10;
-}
+{ chip8->I = 0x050 + chip8->V[extract_x(opcode)] * 10; }
 
 static inline void ins_FX33(Chip8* chip8, uint16_t opcode) // LD B, Vx
 {
@@ -478,9 +435,7 @@ static inline void ins_FX55(Chip8* chip8, uint16_t opcode) // LD  I, Vx
         return;
     }
     memcpy(&chip8->memory[chip8->I], chip8->V, x + 1);
-    if (chip8->loadstore_quirk) {
-        chip8->I += x + 1;
-    }
+    if (chip8->loadstore_quirk) { chip8->I += x + 1; }
 }
 
 static inline void ins_FX65(Chip8* chip8, uint16_t opcode) // LD Vx, I
@@ -491,9 +446,7 @@ static inline void ins_FX65(Chip8* chip8, uint16_t opcode) // LD Vx, I
         return;
     }
     memcpy(chip8->V, &chip8->memory[chip8->I], (x + 1) * sizeof(uint8_t));
-    if (chip8->loadstore_quirk) {
-        chip8->I += x + 1;
-    }
+    if (chip8->loadstore_quirk) { chip8->I += x + 1; }
 }
 
 static inline void ins_FX75(Chip8* chip8, uint16_t opcode)

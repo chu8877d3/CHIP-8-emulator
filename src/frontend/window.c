@@ -43,7 +43,8 @@ bool window_init(Window* display, char* title, int width, int height, int scale)
         SDL_Log("Audio init failed%s", SDL_GetError());
         return false;
     }
-    display->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width * scale, height * scale, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+    display->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width * scale,
+                                       height * scale, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     if (!display->window) {
         SDL_Log("Window %s create failed %s", title, SDL_GetError());
         return false;
@@ -54,7 +55,8 @@ bool window_init(Window* display, char* title, int width, int height, int scale)
         SDL_Log("Renderer %s create failed %s", title, SDL_GetError());
         return false;
     }
-    display->texture = SDL_CreateTexture(display->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, width, height);
+    display->texture
+        = SDL_CreateTexture(display->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, width, height);
     if (!display->texture) {
         SDL_DestroyWindow(display->window);
         SDL_DestroyRenderer(display->renderer);
@@ -74,9 +76,7 @@ void window_play_sound(Window* display, uint8_t should_play)
 
 void window_cleanup(Window* display)
 {
-    if (display->audio_device != 0) {
-        SDL_CloseAudioDevice(display->audio_device);
-    }
+    if (display->audio_device != 0) { SDL_CloseAudioDevice(display->audio_device); }
     SDL_DestroyWindow(display->window);
     SDL_DestroyRenderer(display->renderer);
     SDL_DestroyTexture(display->texture);

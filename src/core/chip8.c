@@ -1,10 +1,12 @@
 #include "chip8.h"
-#include "instructions.h"
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#include "instructions.h"
 
 static const uint8_t fontset[80] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -22,7 +24,7 @@ static const uint8_t fontset[80] = {
     0xF0, 0x80, 0x80, 0x80, 0xF0, // C
     0xE0, 0x90, 0x90, 0x90, 0xE0, // D
     0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
-    0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+    0xF0, 0x80, 0xF0, 0x80, 0x80 // F
 };
 
 static const uint8_t big_fontest[160] = {
@@ -41,18 +43,15 @@ static const uint8_t big_fontest[160] = {
     0x3C, 0xFF, 0xC3, 0xC0, 0xC0, 0xC0, 0xC0, 0xC3, 0xFF, 0x3C, // C
     0xFC, 0xFE, 0xC3, 0xC3, 0xC3, 0xC3, 0xC3, 0xC3, 0xFE, 0xFC, // D
     0xFF, 0xFF, 0xC0, 0xC0, 0xFF, 0xFF, 0xC0, 0xC0, 0xFF, 0xFF, // E
-    0xFF, 0xFF, 0xC0, 0xC0, 0xFF, 0xFF, 0xC0, 0xC0, 0xC0, 0xC0  // F
+    0xFF, 0xFF, 0xC0, 0xC0, 0xFF, 0xFF, 0xC0, 0xC0, 0xC0, 0xC0 // F
 };
 
 typedef void (*InstructionFunc)(Chip8*, uint16_t);
 
 // 一级分派表
-static const InstructionFunc main_table[16] = {
-    ins_0_family, ins_1NNN, ins_2NNN, ins_3XKK,
-    ins_4XKK, ins_5XY0, ins_6XKK, ins_7XKK,
-    ins_8_family, ins_9XY0, ins_ANNN, ins_BNNN,
-    ins_CXKK, ins_DXYN, ins_E_family, ins_F_family
-};
+static const InstructionFunc main_table[16]
+    = { ins_0_family, ins_1NNN, ins_2NNN, ins_3XKK, ins_4XKK, ins_5XY0, ins_6XKK,     ins_7XKK,
+        ins_8_family, ins_9XY0, ins_ANNN, ins_BNNN, ins_CXKK, ins_DXYN, ins_E_family, ins_F_family };
 
 void chip8_init(Chip8* chip8)
 {
@@ -86,8 +85,7 @@ bool chip8_load_rom(Chip8* chip8, const char* filename)
     size_t bytes_read = fread(&chip8->memory[0x200], 1, (size_t)rom_size, fp);
     fclose(fp);
     if (bytes_read != (size_t)rom_size) {
-        fprintf(stderr, "Error: Failed to read ROM. Read %zu and %ld bytes\n",
-            bytes_read, rom_size);
+        fprintf(stderr, "Error: Failed to read ROM. Read %zu and %ld bytes\n", bytes_read, rom_size);
         return false;
     }
     return true;
@@ -95,7 +93,7 @@ bool chip8_load_rom(Chip8* chip8, const char* filename)
 
 void chip8_cycle(Chip8* chip8)
 {
-   if (chip8->pc >= 4094) {
+    if (chip8->pc >= 4094) {
         fprintf(stderr, "ERROR: PC out of bounds! PC=0x%x\n", chip8->pc);
         chip8->running = false;
         return;
@@ -105,7 +103,7 @@ void chip8_cycle(Chip8* chip8)
     chip8->pc += 2;
 
     uint8_t index = (opcode & 0xF000) >> 12;
-    
+
     main_table[index](chip8, opcode);
 }
 

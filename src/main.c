@@ -4,8 +4,8 @@ int main(int argc, char* argv[])
 {
     (void)argc;
     (void)argv;
-    
-    AppContext app = {0};
+
+    AppContext app = { 0 };
     AppContext* app_p = &app;
     app_init(app_p);
 

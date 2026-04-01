@@ -42,7 +42,7 @@ void render_game(AppContext* app)
         dst_rect.h = canvas_w / 2;
     }
     dst_rect.x = (canvas_w - dst_rect.w) / 2;
-    dst_rect.y =  menu_h + (canvas_h - dst_rect.h) / 2;
+    dst_rect.y = menu_h + (canvas_h - dst_rect.h) / 2;
 
     SDL_RenderCopy(display->renderer, display->texture, &game_rect, &dst_rect);
 }
@@ -50,10 +50,9 @@ void render_game(AppContext* app)
 void render_window(AppContext* app)
 {
     uint32_t c = app->config.color_bg;
-    SDL_SetRenderDrawColor(app->display.renderer, (c>>24)&0xFF, (c>>16)&0xFF, (c>>8)&0xFF, 255);
+    SDL_SetRenderDrawColor(app->display.renderer, (c >> 24) & 0xFF, (c >> 16) & 0xFF, (c >> 8) & 0xFF, 255);
     SDL_RenderClear(app->display.renderer);
-    if (app->state == STATE_RUNNING || app->state == STATE_PAUSED)
-        render_game(app);
+    if (app->state == STATE_RUNNING || app->state == STATE_PAUSED) render_game(app);
     SDL_RenderSetLogicalSize(app->display.renderer, 0, 0);
     gui_render(app);
     nk_sdl_render(NK_ANTI_ALIASING_ON);

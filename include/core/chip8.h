@@ -8,14 +8,9 @@
 #define SCREEN_HEIGHT 64
 #define SCREEN_SIZE (SCREEN_HEIGHT * SCREEN_WIDTH)
 
-typedef enum {
-    QUIRK_PROFILE_COSMAC_VIP,
-    QUIRK_PROFILE_SCHIP_LEGACY,
-    QUIRK_PROFILE_MODERN
-} QuirkProfile;
+typedef enum { QUIRK_PROFILE_COSMAC_VIP, QUIRK_PROFILE_SCHIP_LEGACY, QUIRK_PROFILE_MODERN } QuirkProfile;
 
-typedef struct Chip8
-{
+typedef struct Chip8 {
     uint8_t memory[4096]; // 4k 主存 (RAM)
 
     uint16_t stack[16]; // 调用栈

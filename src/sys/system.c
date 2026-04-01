@@ -9,9 +9,7 @@ void app_init(AppContext* app)
     app->state = STATE_IDLE;
     chip8_init(&app->chip8);
     app->cpu_speed = app->config.cpu_frequency_hz;
-    if (!window_init(&app->display, "CHIP-8 emulator", 128, 64, 10)) {
-        exit(1);
-    }
+    if (!window_init(&app->display, "CHIP-8 emulator", 128, 64, 10)) { exit(1); }
     app->ctx = gui_init(app);
 
     app_game_init(app);
@@ -65,13 +63,10 @@ void app_handle_events(AppContext* app)
             break;
 
         case SDL_MOUSEBUTTONDOWN:
-            if (nk_window_is_any_hovered(ctx) || nk_item_is_any_active(ctx)) {
-                break;
-            }
+            if (nk_window_is_any_hovered(ctx) || nk_item_is_any_active(ctx)) { break; }
             break;
         case SDL_KEYDOWN:
-            if (event.key.repeat != 0)
-                break;
+            if (event.key.repeat != 0) break;
             SDL_Keycode key_input = event.key.keysym.sym;
             if (key_input == config.key_fullscreen) {
                 app_toggle_fullscreen(app);
@@ -136,6 +131,4 @@ void app_run(AppContext* app)
     render_window(app);
 }
 void app_exit(AppContext* app)
-{
-    window_cleanup(&app->display);
-}
+{ window_cleanup(&app->display); }

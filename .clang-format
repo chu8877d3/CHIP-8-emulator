@@ -1,0 +1,13 @@
+BasedOnStyle: WebKit
+ColumnLimit: 120
+IndentWidth: 4
+ContinuationIndentWidth: 4
+BreakBeforeBraces: Linux
+PointerAlignment: Left
+AllowShortIfStatementsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: None
+AllowShortBlocksOnASingleLine: true
+BreakBeforeTernaryOperators: true
+AlignAfterOpenBracket: Align
+PenaltyBreakFirstLessLess: 1000
+AlignConsecutiveAssignments: false

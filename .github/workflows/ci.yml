@@ -54,4 +54,4 @@ jobs:
           name: chip8-${{ runner.os }}
           path: |
             build/**/chip8
-            build/**/chip8.exe
+            build/**/chip8.exe2

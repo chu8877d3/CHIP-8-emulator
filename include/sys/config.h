@@ -26,18 +26,17 @@ typedef struct AppConfig {
     char current_rom_path[256];
 } AppConfig;
 
-#define CONFIG_DEFAULT {                      \
-    .key_pause = SDLK_F4,                     \
-    .key_restart = SDLK_F5,                   \
-    .key_fullscreen = SDLK_F11,               \
-    .key_minimize = SDLK_m,                   \
-    .key_debug = SDLK_F3,                     \
-    .color_pixel = COLOR_PIXEL,               \
-    .color_bg = COLOR_BACKGROUND,             \
-    .quirk_mode = QUIRK_PROFILE_SCHIP_LEGACY, \
-    .cpu_frequency_hz = 500,                  \
-    .keymap_is_default = true                 \
-}
+#define CONFIG_DEFAULT                                                                                                 \
+    { .key_pause = SDLK_F4,                                                                                            \
+      .key_restart = SDLK_F5,                                                                                          \
+      .key_fullscreen = SDLK_F11,                                                                                      \
+      .key_minimize = SDLK_m,                                                                                          \
+      .key_debug = SDLK_F3,                                                                                            \
+      .color_pixel = COLOR_PIXEL,                                                                                      \
+      .color_bg = COLOR_BACKGROUND,                                                                                    \
+      .quirk_mode = QUIRK_PROFILE_SCHIP_LEGACY,                                                                        \
+      .cpu_frequency_hz = 500,                                                                                         \
+      .keymap_is_default = true }
 
 AppConfig config_init();
 #endif
