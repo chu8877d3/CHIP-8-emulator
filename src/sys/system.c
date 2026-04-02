@@ -13,7 +13,6 @@ void app_init(AppContext* app)
         exit(1);
     }
     app->ctx = gui_init(app);
-
     app_game_init(app);
 }
 static inline void app_update_kepad_default(AppContext* app)
@@ -108,6 +107,7 @@ void app_game_run(AppContext* app)
 
     app->frametime = app->frametime > 0.1 ? 0.1 : app->frametime;
     app->accumlator += app->frametime;
+    app->ips_timer += app->state == STATE_RUNNING ? app->frametime : 0;
 
     Chip8* chip8 = &app->chip8;
 
@@ -122,6 +122,7 @@ void app_game_run(AppContext* app)
 
             for (int i = 0; i < ins_to_run; i++) {
                 chip8_cycle(chip8);
+                app->total_ins_count++;
             }
 
             app->ins_accumulator -= (double)ins_to_run;
@@ -129,7 +130,11 @@ void app_game_run(AppContext* app)
         }
         app->accumlator -= app->fixed_dt;
     }
-
+    if (app->ips_timer >= 1.0 && app->state == STATE_RUNNING) {
+        app->last_measured_ips = (uint32_t)((double)app->total_ins_count / app->ips_timer);
+        app->total_ins_count = 0;
+        app->ips_timer -= 1.0;
+    }
     bool should_beep = (app->state == STATE_RUNNING && chip8->sound_timer > 0);
     window_play_sound(&app->display, should_beep);
 }

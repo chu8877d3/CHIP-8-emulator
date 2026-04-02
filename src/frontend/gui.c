@@ -94,10 +94,15 @@ static void gui_render_debugger(nk_ctx_t* ctx, AppContext* app)
     struct nk_rect bounds = nk_rect(win_w - sidebar_w, menu_h, sidebar_w, win_h - menu_h);
     Chip8* chip8 = &app->chip8;
     if (nk_begin(ctx, "Debugger", bounds, NK_WINDOW_BORDER | NK_WINDOW_TITLE)) {
+        nk_layout_row_dynamic(ctx, 25, 2);
+        nk_label(ctx, "CPU Speed (Hz)", NK_TEXT_LEFT);
+        if (nk_property_int(ctx, "", 100, &app->cpu_speed, 10000, 10, 100)) app->cpu_speed_change = true;
         nk_layout_row_dynamic(ctx, 25, 1);
-        nk_label(ctx, "CPU Settings", NK_TEXT_LEFT);
-        if (nk_property_int(ctx, "CPU Speed (HZ)", 100, &app->cpu_speed, 10000, 10, 100)) app->cpu_speed_change = true;
         if (nk_slider_int(ctx, 100, &app->cpu_speed, 10000, 10)) app->cpu_speed_change = true;
+        nk_layout_row_dynamic(ctx, 25, 2);
+        nk_labelf(ctx, NK_TEXT_LEFT, "IPS: %d", app->last_measured_ips);
+        nk_labelf(ctx, NK_TEXT_LEFT, "IPF: %.2f", app->ins_per_frame);
+
         if (nk_tree_push(ctx, NK_TREE_TAB, "Core Register", NK_MAXIMIZED)) {
             nk_layout_row_dynamic(ctx, 20, 1);
             nk_labelf(ctx, NK_TEXT_LEFT, "PC: 0x%04x", chip8->pc);
@@ -177,6 +182,8 @@ static inline void top_menubor_render(nk_ctx_t* ctx, AppContext* app)
             if (app_state == STATE_IDLE) nk_widget_disable_end(ctx);
             if (nk_menu_item_label(ctx, "Speed", NK_TEXT_LEFT)) {
                 app->gui.show_cpu_popup = true;
+                app->gui.temp_cpu_speed_change = false;
+                app->gui.temp_cpu_speed = app->cpu_speed;
                 nk_window_show(ctx, "CPU Settings", NK_SHOWN);
             }
             if (nk_menu_item_label(ctx, "Quirks", NK_TEXT_LEFT)) {
@@ -233,15 +240,42 @@ static void gui_render_speed_popup(nk_ctx_t* ctx, AppContext* app)
     if (nk_begin(ctx, "CPU Settings", bounds,
                  NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_MOVABLE | NK_WINDOW_CLOSABLE)) {
         nk_layout_row_dynamic(ctx, 25, 1);
-        if (nk_property_int(ctx, "CPU Speed (HZ)", 100, &app->cpu_speed, 10000, 10, 100)) {
-            app->cpu_speed_change = true;
+        if (nk_property_int(ctx, "CPU Speed (Hz)", 100, &app->gui.temp_cpu_speed, 10000, 10, 100)) {
+            app->gui.temp_cpu_speed_change = true;
         }
         nk_layout_row_dynamic(ctx, 20, 1);
-        if (nk_slider_int(ctx, 100, &app->cpu_speed, 10000, 10)) {
-            app->cpu_speed_change = true;
+        if (nk_slider_int(ctx, 100, &app->gui.temp_cpu_speed, 10000, 10)) {
+            app->gui.temp_cpu_speed_change = true;
         }
-        nk_layout_row_dynamic(ctx, 25, 1);
-        if (nk_button_label(ctx, "apply")) {
+        nk_layout_row_dynamic(ctx, 20, 4);
+        if (nk_button_label(ctx, "500")) {
+            app->gui.temp_cpu_speed = 500;
+            app->gui.temp_cpu_speed_change = true;
+        }
+        if (nk_button_label(ctx, "700")) {
+            app->gui.temp_cpu_speed = 700;
+            app->gui.temp_cpu_speed_change = true;
+        }
+        if (nk_button_label(ctx, "1000")) {
+            app->gui.temp_cpu_speed = 1000;
+            app->gui.temp_cpu_speed_change = true;
+        }
+        if (nk_button_label(ctx, "2000")) {
+            app->gui.temp_cpu_speed = 2000;
+            app->gui.temp_cpu_speed_change = true;
+        }
+        nk_layout_row_dynamic(ctx, 25, 2);
+        if (!app->gui.temp_cpu_speed_change) nk_widget_disable_begin(ctx);
+        if (nk_button_label(ctx, "Apply")) {
+            if (app->gui.temp_cpu_speed_change) {
+                app->cpu_speed = app->gui.temp_cpu_speed;
+                app->cpu_speed_change = true;
+            }
+            app->gui.show_cpu_popup = false;
+            nk_window_show(ctx, "CPU Settings", NK_HIDDEN);
+        }
+        if (!app->gui.temp_cpu_speed_change) nk_widget_disable_end(ctx);
+        if (nk_button_label(ctx, "Close")) {
             app->gui.show_cpu_popup = false;
             nk_window_show(ctx, "CPU Settings", NK_HIDDEN);
         }

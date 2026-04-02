@@ -16,13 +16,15 @@ typedef struct nk_context nk_ctx_t;
 typedef struct AppContext AppContext;
 
 typedef struct GuiState {
-    char current_rom_path[256];
+    int temp_cpu_speed;
+    bool temp_cpu_speed_change;
     bool show_debugger;
     bool show_cpu_popup;
     bool show_rom_library;
     bool show_settings;
     bool show_keymap_help;
     bool is_fullscreen;
+    char current_rom_path[256];
 } GuiState;
 
 nk_ctx_t* gui_init(AppContext* app);
