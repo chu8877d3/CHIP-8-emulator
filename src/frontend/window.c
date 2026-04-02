@@ -7,9 +7,9 @@ static void audio_callback(void* userdata, Uint8* stream, int len)
     int length = len / 2;
 
     static int sample_index = 0;
-    int frequency = 440;  // 蜂鸣器频率 （440Hz 标准A音)
-    int sample_rate = 44100;  // 采样率
-    int volume = 3000;  // 音量
+    int frequency = 440; // 蜂鸣器频率 （440Hz 标准A音)
+    int sample_rate = 44100; // 采样率
+    int volume = 3000; // 音量
 
     for (int i = 0; i < length; i++) {
         if ((sample_index++ / (sample_rate / frequency / 2) % 2)) {
@@ -76,7 +76,9 @@ void window_play_sound(Window* display, uint8_t should_play)
 
 void window_cleanup(Window* display)
 {
-    if (display->audio_device != 0) { SDL_CloseAudioDevice(display->audio_device); }
+    if (display->audio_device != 0) {
+        SDL_CloseAudioDevice(display->audio_device);
+    }
     SDL_DestroyWindow(display->window);
     SDL_DestroyRenderer(display->renderer);
     SDL_DestroyTexture(display->texture);

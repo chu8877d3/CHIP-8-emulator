@@ -18,6 +18,7 @@ typedef struct AppContext AppContext;
 typedef struct GuiState {
     char current_rom_path[256];
     bool show_debugger;
+    bool show_cpu_popup;
     bool show_rom_library;
     bool show_settings;
     bool show_keymap_help;

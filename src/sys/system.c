@@ -9,12 +9,13 @@ void app_init(AppContext* app)
     app->state = STATE_IDLE;
     chip8_init(&app->chip8);
     app->cpu_speed = app->config.cpu_frequency_hz;
-    if (!window_init(&app->display, "CHIP-8 emulator", 128, 64, 10)) { exit(1); }
+    if (!window_init(&app->display, "CHIP-8 emulator", 128, 64, 10)) {
+        exit(1);
+    }
     app->ctx = gui_init(app);
 
     app_game_init(app);
 }
-
 static inline void app_update_kepad_default(AppContext* app)
 {
     const Uint8* state = SDL_GetKeyboardState(NULL);
@@ -40,7 +41,6 @@ static inline void app_update_kepad_default(AppContext* app)
     keypad[0xB] = state[SDL_SCANCODE_C];
     keypad[0xF] = state[SDL_SCANCODE_V];
 }
-
 void app_handle_events(AppContext* app)
 {
     SDL_Event event;
@@ -51,30 +51,33 @@ void app_handle_events(AppContext* app)
         nk_sdl_handle_event(&event);
 
         switch (event.type) {
-        case SDL_QUIT:
-            app->is_running = false;
-            break;
+            case SDL_QUIT:
+                app->is_running = false;
+                break;
 
-        case SDL_WINDOWEVENT:
-            if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED || event.window.event == SDL_WINDOWEVENT_RESIZED) {
-                app->display.window_w = event.window.data1;
-                app->display.window_h = event.window.data2;
-            }
-            break;
+            case SDL_WINDOWEVENT:
+                if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED
+                    || event.window.event == SDL_WINDOWEVENT_RESIZED) {
+                    app->display.window_w = event.window.data1;
+                    app->display.window_h = event.window.data2;
+                }
+                break;
 
-        case SDL_MOUSEBUTTONDOWN:
-            if (nk_window_is_any_hovered(ctx) || nk_item_is_any_active(ctx)) { break; }
-            break;
-        case SDL_KEYDOWN:
-            if (event.key.repeat != 0) break;
-            SDL_Keycode key_input = event.key.keysym.sym;
-            if (key_input == config.key_fullscreen) {
-                app_toggle_fullscreen(app);
-            } else if (key_input == config.key_pause) {
-                app_pause_or_resume(app);
-            } else if (key_input == config.key_restart) {
-                chip8_restart(&app->chip8);
-            }
+            case SDL_MOUSEBUTTONDOWN:
+                if (nk_window_is_any_hovered(ctx) || nk_item_is_any_active(ctx)) {
+                    break;
+                }
+                break;
+            case SDL_KEYDOWN:
+                if (event.key.repeat != 0) break;
+                SDL_Keycode key_input = event.key.keysym.sym;
+                if (key_input == config.key_fullscreen) {
+                    app_toggle_fullscreen(app);
+                } else if (key_input == config.key_pause) {
+                    app_pause_or_resume(app);
+                } else if (key_input == config.key_restart) {
+                    chip8_restart(&app->chip8);
+                }
         }
     }
     nk_input_end(ctx);
@@ -84,14 +87,18 @@ void app_handle_events(AppContext* app)
         memset(app->chip8.keypad, 0, sizeof((app->chip8.keypad)));
     }
 }
-
 void app_game_init(AppContext* app)
 {
-    app->instruction_per_frame = app->cpu_speed / TIME_FREQUENCY_HZ;
+    app->ins_per_frame = (double)app->cpu_speed / (double)TIME_FREQUENCY_HZ;
     app->fixed_dt = 1.0 / (double)TIME_FREQUENCY_HZ;
     app->prev_counter = SDL_GetPerformanceCounter();
+    app->ins_accumulator = 0.0;
     app->accumlator = 0.0;
     app->perf_frequency = (double)SDL_GetPerformanceFrequency();
+}
+void app_game_update(AppContext* app)
+{
+    app->ins_per_frame = (double)app->cpu_speed / (double)TIME_FREQUENCY_HZ;
 }
 void app_game_run(AppContext* app)
 {
@@ -110,9 +117,14 @@ void app_game_run(AppContext* app)
                 app->state = STATE_IDLE;
                 break;
             }
-            for (int i = 0; i < app->instruction_per_frame; i++) {
+            app->ins_accumulator += app->ins_per_frame;
+            int ins_to_run = (int)app->ins_accumulator;
+
+            for (int i = 0; i < ins_to_run; i++) {
                 chip8_cycle(chip8);
             }
+
+            app->ins_accumulator -= (double)ins_to_run;
             chip8_update_timers(chip8);
         }
         app->accumlator -= app->fixed_dt;
@@ -124,11 +136,13 @@ void app_game_run(AppContext* app)
 void app_run(AppContext* app)
 {
     if (app->cpu_speed_change) {
-        app_game_init(app);
+        app_game_update(app);
         app->cpu_speed_change = false;
     }
     app_game_run(app);
     render_window(app);
 }
 void app_exit(AppContext* app)
-{ window_cleanup(&app->display); }
+{
+    window_cleanup(&app->display);
+}

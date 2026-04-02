@@ -34,12 +34,25 @@ nk_ctx_t* gui_init(AppContext* app)
     struct nk_font* default_font = nk_font_atlas_add_default(atlas, 13, 0);
     nk_sdl_font_stash_end();
 
-    if (default_font) { nk_style_set_font(ctx, &default_font->handle); }
+    if (default_font) {
+        nk_style_set_font(ctx, &default_font->handle);
+    }
 
     gui->is_fullscreen = false;
     gui->show_debugger = true;
-
+    gui->show_cpu_popup = false;
+    gui->show_keymap_help = false;
+    gui->show_rom_library = false;
+    gui->show_settings = false;
     return ctx;
+}
+
+static nk_bool nk_checkbox_label_bool(nk_ctx_t* ctx, const char* label, bool* active)
+{
+    nk_bool temp = (int)*active;
+    nk_bool ret = nk_checkbox_label(ctx, label, &temp);
+    *active = (bool)temp;
+    return ret;
 }
 
 static void handle_rom_loading(AppContext* app)
@@ -71,6 +84,7 @@ static void handle_romdir_show(AppContext* app)
 
 static void gui_render_debugger(nk_ctx_t* ctx, AppContext* app)
 {
+    if (!app->gui.show_debugger) return;
     Window* display = &app->display;
     int win_w = display->window_w;
     int win_h = display->window_h;
@@ -80,6 +94,10 @@ static void gui_render_debugger(nk_ctx_t* ctx, AppContext* app)
     struct nk_rect bounds = nk_rect(win_w - sidebar_w, menu_h, sidebar_w, win_h - menu_h);
     Chip8* chip8 = &app->chip8;
     if (nk_begin(ctx, "Debugger", bounds, NK_WINDOW_BORDER | NK_WINDOW_TITLE)) {
+        nk_layout_row_dynamic(ctx, 25, 1);
+        nk_label(ctx, "CPU Settings", NK_TEXT_LEFT);
+        if (nk_property_int(ctx, "CPU Speed (HZ)", 100, &app->cpu_speed, 10000, 10, 100)) app->cpu_speed_change = true;
+        if (nk_slider_int(ctx, 100, &app->cpu_speed, 10000, 10)) app->cpu_speed_change = true;
         if (nk_tree_push(ctx, NK_TREE_TAB, "Core Register", NK_MAXIMIZED)) {
             nk_layout_row_dynamic(ctx, 20, 1);
             nk_labelf(ctx, NK_TEXT_LEFT, "PC: 0x%04x", chip8->pc);
@@ -107,15 +125,16 @@ static void gui_render_debugger(nk_ctx_t* ctx, AppContext* app)
             nk_labelf(ctx, NK_TEXT_LEFT, "[0x%04x] -> 0x%04x", chip8->pc, opcode);
             nk_tree_pop(ctx);
         }
-        nk_end(ctx);
     }
+    nk_end(ctx);
 }
 static inline void top_menubor_render(nk_ctx_t* ctx, AppContext* app)
 {
+    if (app->gui.is_fullscreen) return;
     Appstate app_state = app->state;
     int win_w = app->display.window_w;
 
-    if (nk_begin(ctx, "MenuBar", nk_rect(0, 0, win_w, MENU_HEIGHT), NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_BACKGROUND)) {
+    if (nk_begin(ctx, "MenuBar", nk_rect(0, 0, win_w, MENU_HEIGHT), NK_WINDOW_NO_SCROLLBAR)) {
 
         nk_menubar_begin(ctx);
         nk_layout_row_static(ctx, MENU_HEIGHT, 70, 5);
@@ -123,74 +142,81 @@ static inline void top_menubor_render(nk_ctx_t* ctx, AppContext* app)
         if (nk_menu_begin_label(ctx, "File", NK_TEXT_LEFT, nk_vec2(120, 130))) { /*  file */
             nk_layout_row_dynamic(ctx, 25, 1);
 
-            if (nk_menu_item_label(ctx, "Open ROM", NK_TEXT_LEFT)) {  // open rom
+            if (nk_menu_item_label(ctx, "Open ROM", NK_TEXT_LEFT)) { // open rom
                 handle_rom_loading(app);
             }
-            nk_widget_disable_begin(ctx);  // 未开发
-            if (nk_menu_item_label(ctx, "Load Directory", NK_TEXT_LEFT)) {  // load dir
+            nk_widget_disable_begin(ctx); // 未开发
+            if (nk_menu_item_label(ctx, "Load Directory", NK_TEXT_LEFT)) { // load dir
                 handle_romdir_show(app);
             }
             nk_widget_disable_end(ctx);
             if (app_state == STATE_IDLE) nk_widget_disable_begin(ctx);
-            if (nk_menu_item_label(ctx, "Close ROM", NK_TEXT_LEFT)) {  // close
+            if (nk_menu_item_label(ctx, "Close ROM", NK_TEXT_LEFT)) { // close
                 app_request_unload_rom(app);
             }
             if (app_state == STATE_IDLE) nk_widget_disable_end(ctx);
 
-            if (nk_menu_item_label(ctx, "Exit", NK_TEXT_LEFT)) {  // exit
+            if (nk_menu_item_label(ctx, "Exit", NK_TEXT_LEFT)) { // exit
                 app->is_running = false;
             }
             nk_menu_end(ctx);
         }
 
-        if (nk_menu_begin_label(ctx, "Emulate", NK_TEXT_LEFT, nk_vec2(120, 160))) { /* emulato r*/
+        if (nk_menu_begin_label(ctx, "Emulate", NK_TEXT_LEFT, nk_vec2(120, 160))) { /* emulator */
             nk_layout_row_dynamic(ctx, 25, 1);
 
             if (app_state == STATE_IDLE) nk_widget_disable_begin(ctx);
             if (nk_menu_item_label(ctx, app->state == STATE_PAUSED ? "Resume" : "Pause",
-                                   NK_TEXT_LEFT)) {  // pause / continue
+                                   NK_TEXT_LEFT)) { // pause / continue
                 app_pause_or_resume(app);
             }
 
-            if (nk_menu_item_label(ctx, "Restart", NK_TEXT_LEFT)) {  // restart
+            if (nk_menu_item_label(ctx, "Restart", NK_TEXT_LEFT)) { // restart
                 chip8_restart(&app->chip8);
             }
-            if (app_state != STATE_IDLE) nk_widget_disable_end(ctx);
-            if (nk_menu_item_label(ctx, "CPU Speed (HZ)", NK_TEXT_LEFT)) {
-                nk_layout_row_dynamic(ctx, 25, 1);
-                nk_property_int(ctx, "CPu Speed (HZ)", 100, &app->cpu_speed, 10000, 10, 100);
-
-                nk_layout_row_dynamic(ctx, 20, 1);
-                nk_slider_int(ctx, 100, &app->cpu_speed, 10000, 10);
+            if (app_state == STATE_IDLE) nk_widget_disable_end(ctx);
+            if (nk_menu_item_label(ctx, "Speed", NK_TEXT_LEFT)) {
+                app->gui.show_cpu_popup = true;
+                nk_window_show(ctx, "CPU Settings", NK_SHOWN);
             }
-            if (nk_menu_item_label(ctx, "Quirks", NK_TEXT_LEFT)) { }
+            if (nk_menu_item_label(ctx, "Quirks", NK_TEXT_LEFT)) {
+            }
             nk_menu_end(ctx);
         }
 
         if (nk_menu_begin_label(ctx, "Video", NK_TEXT_LEFT, nk_vec2(120, 130))) {
             nk_layout_row_dynamic(ctx, 25, 1);
-            if (nk_menu_item_label(ctx, "Toggle Fullscreen", NK_TEXT_LEFT)) { app_toggle_fullscreen(app); }
+            if (nk_menu_item_label(ctx, "Toggle Fullscreen", NK_TEXT_LEFT)) {
+                app_toggle_fullscreen(app);
+            }
 
-            if (nk_menu_item_label(ctx, "Size", NK_TEXT_LEFT)) { }
-            if (nk_menu_item_label(ctx, "Color Theme", NK_TEXT_LEFT)) { }
-            if (nk_menu_item_label(ctx, "Aspect", NK_TEXT_LEFT)) { }
+            if (nk_menu_item_label(ctx, "Size", NK_TEXT_LEFT)) {
+            }
+            if (nk_menu_item_label(ctx, "Color Theme", NK_TEXT_LEFT)) {
+            }
+            if (nk_menu_item_label(ctx, "Aspect", NK_TEXT_LEFT)) {
+            }
             nk_menu_end(ctx);
         }
 
         if (nk_menu_begin_label(ctx, "View", NK_TEXT_LEFT, nk_vec2(120, 100))) {
             nk_layout_row_dynamic(ctx, 25, 1);
-            nk_checkbox_label(ctx, "Show Debugger", (int*)&app->gui.show_debugger);
+            nk_checkbox_label_bool(ctx, "Show Debugger", &app->gui.show_debugger);
 
-            if (nk_menu_item_label(ctx, "Memory Map", NK_TEXT_LEFT)) { }
-            if (nk_menu_item_label(ctx, "Log", NK_TEXT_LEFT)) { }
+            if (nk_menu_item_label(ctx, "Memory Map", NK_TEXT_LEFT)) {
+            }
+            if (nk_menu_item_label(ctx, "Log", NK_TEXT_LEFT)) {
+            }
             nk_menu_end(ctx);
         }
 
         if (nk_menu_begin_label(ctx, "Help", NK_TEXT_LEFT, nk_vec2(120, 70))) {
             nk_layout_row_dynamic(ctx, 25, 1);
-            if (nk_menu_item_label(ctx, "Kepmap", NK_TEXT_LEFT)) { }
+            if (nk_menu_item_label(ctx, "Kepmap", NK_TEXT_LEFT)) {
+            }
 
-            if (nk_menu_item_label(ctx, "About", NK_TEXT_LEFT)) { }
+            if (nk_menu_item_label(ctx, "About", NK_TEXT_LEFT)) {
+            }
 
             nk_menu_end(ctx);
         }
@@ -198,11 +224,40 @@ static inline void top_menubor_render(nk_ctx_t* ctx, AppContext* app)
     }
     nk_end(ctx);
 }
+static void gui_render_speed_popup(nk_ctx_t* ctx, AppContext* app)
+{
+    if (!app->gui.show_cpu_popup) return;
+    int win_w = app->display.window_w;
+    int win_h = app->display.window_h;
+    struct nk_rect bounds = nk_rect((win_w - 250) / 2, (win_h - 150) / 2, 250, 150);
+    if (nk_begin(ctx, "CPU Settings", bounds,
+                 NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_MOVABLE | NK_WINDOW_CLOSABLE)) {
+        nk_layout_row_dynamic(ctx, 25, 1);
+        if (nk_property_int(ctx, "CPU Speed (HZ)", 100, &app->cpu_speed, 10000, 10, 100)) {
+            app->cpu_speed_change = true;
+        }
+        nk_layout_row_dynamic(ctx, 20, 1);
+        if (nk_slider_int(ctx, 100, &app->cpu_speed, 10000, 10)) {
+            app->cpu_speed_change = true;
+        }
+        nk_layout_row_dynamic(ctx, 25, 1);
+        if (nk_button_label(ctx, "apply")) {
+            app->gui.show_cpu_popup = false;
+            nk_window_show(ctx, "CPU Settings", NK_HIDDEN);
+        }
+    } else {
+        app->gui.show_cpu_popup = false;
+    }
+    nk_end(ctx);
+    if (nk_window_is_closed(ctx, "CPU Settings")) {
+        app->gui.show_cpu_popup = false;
+    }
+}
 
 void gui_render(AppContext* app)
 {
     nk_ctx_t* ctx = app->ctx;
-
+    gui_render_debugger(ctx, app);
     top_menubor_render(ctx, app);
-    if (app->gui.show_debugger) { gui_render_debugger(ctx, app); }
+    gui_render_speed_popup(ctx, app);
 }

@@ -21,15 +21,25 @@ void ins_E_family(Chip8* chip8, uint16_t opcode);
 void ins_F_family(Chip8* chip8, uint16_t opcode);
 
 static inline uint16_t extract_nnn(uint16_t opcode)
-{ return (opcode & 0x0FFF); }
+{
+    return (opcode & 0x0FFF);
+}
 static inline uint8_t extract_n(uint16_t opcode)
-{ return (opcode & 0x000F); }
+{
+    return (opcode & 0x000F);
+}
 static inline uint8_t extract_x(uint16_t opcode)
-{ return (opcode & 0x0F00) >> 8; }
+{
+    return (opcode & 0x0F00) >> 8;
+}
 static inline uint8_t extract_y(uint16_t opcode)
-{ return (opcode & 0x00F0) >> 4; }
+{
+    return (opcode & 0x00F0) >> 4;
+}
 static inline uint8_t extract_kk(uint16_t opcode)
-{ return (opcode & 0x00FF); }
+{
+    return (opcode & 0x00FF);
+}
 static inline int get_currently_pressed_key(Chip8* chip8)
 {
     for (int i = 0; i < 16; i++) {
