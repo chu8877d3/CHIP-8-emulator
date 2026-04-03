@@ -1,5 +1,6 @@
 #include "renderer.h"
 #include "system.h"
+#include "tools.h"
 
 void render_game(AppContext* app)
 {
@@ -13,11 +14,11 @@ void render_game(AppContext* app)
     bool* state = chip8->state;
     uint32_t* video = chip8->video;
 
-    uint32_t color_pixel = app->config.color_pixel;
+    uint32_t color_fg = app->config.color_fg;
     uint32_t color_bg = app->config.color_bg;
 
     for (size_t i = 0; i < pixel_count; i++) {
-        video[i] = state[i] ? color_pixel : color_bg;
+        video[i] = state[i] ? color_fg : color_bg;
     }
 
     SDL_Rect game_rect = { 0, 0, game_w, game_h };
@@ -50,7 +51,7 @@ void render_game(AppContext* app)
 void render_window(AppContext* app)
 {
     uint32_t c = app->config.color_bg;
-    SDL_SetRenderDrawColor(app->display.renderer, (c >> 24) & 0xFF, (c >> 16) & 0xFF, (c >> 8) & 0xFF, 255);
+    SDL_SetRenderDrawColor(app->display.renderer, r(c), g(c), b(c), a(c));
     SDL_RenderClear(app->display.renderer);
     if (app->state == STATE_RUNNING || app->state == STATE_PAUSED) render_game(app);
     SDL_RenderSetLogicalSize(app->display.renderer, 0, 0);
