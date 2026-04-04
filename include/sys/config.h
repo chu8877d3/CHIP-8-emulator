@@ -1,10 +1,9 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include "tools.h"
 #include <SDL.h>
 #include <chip8.h>
-
-#define MAKE_RGBA(r, g, b, a) (((r) << 24) | ((g) << 16) | ((b) << 8) | a)
 
 typedef enum ColorTheme {
     THEME_CLASSIC,
@@ -14,7 +13,8 @@ typedef enum ColorTheme {
     THEME_AMBER,
     THEME_VAMPIRE,
     THEME_OCEANIC,
-    THEME_COUNT
+    THEME_COUNT,
+    THEME_CUSTOM = 100
 } ColorTheme;
 typedef struct {
     uint8_t r, g, b, a;
@@ -98,7 +98,7 @@ static inline void config_apply_theme(AppConfig* config, ColorTheme theme_idx)
     const ThemeConfig* t = &THEME_TABLE[theme_idx];
     const ColorRGBA* bg = &t->bg;
     const ColorRGBA* fg = &t->fg;
-    config->color_bg = MAKE_RGBA(bg->r, bg->g, bg->b, bg->a);
-    config->color_fg = MAKE_RGBA(fg->r, fg->g, fg->b, fg->a);
+    config->color_bg = color_to_u32(bg->r, bg->g, bg->b, bg->a);
+    config->color_fg = color_to_u32(fg->r, fg->g, fg->b, fg->a);
 }
 #endif

@@ -16,5 +16,5 @@ typedef struct Window {
 bool window_init(Window* display, char* title, int width, int height, int scale);
 void window_play_sound(Window* display, uint8_t should_play);
 void window_cleanup(Window* display);
-
+void window_cleanup(Window* display);
 #endif

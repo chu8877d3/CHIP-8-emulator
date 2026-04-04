@@ -27,6 +27,13 @@ typedef struct {
 } PopupContrl;
 
 typedef struct GuiState {
+    struct nk_color nk_bg; // 背景色调色盘
+    struct nk_color nk_fg; // 前景色调色盘
+    struct nk_color temp_nk_bg; //
+    struct nk_color temp_nk_fg; //
+    char hex_bg[8]; //
+    char hex_fg[8]; //
+
     ColorTheme curr_theme_index; // 当前用的主题
     ColorTheme temp_theme_index; // 用于窗口显示的临时主题
     int temp_cpu_speed; // 用于 apply 之前的 speed数值临时存储

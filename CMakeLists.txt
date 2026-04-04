@@ -6,6 +6,7 @@ project(Chip8Emulator VERSION 1.0.0 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # 寻找依赖库
 find_package(SDL2 REQUIRED)
@@ -30,6 +31,7 @@ target_include_directories(tinyfd_lib PUBLIC vendor/tinyfd)
 
 add_library(nuklear_lib STATIC vendor/nuklear/nuklear_impl.c)
 target_include_directories(nuklear_lib PUBLIC vendor/nuklear)
+target_link_libraries(nuklear_lib PUBLIC SDL2::SDL2)
 
 # 为已定义的目标配置编译选项
 if(MSVC)

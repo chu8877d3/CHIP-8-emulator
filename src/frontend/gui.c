@@ -7,15 +7,25 @@
 #define NK_INCLUDE_FONT_BAKING
 #define NK_INCLUDE_DEFAULT_FONT
 
-/* 2. 关键：触发 SDL 渲染器后端实现代码的宏 */
-#define NK_IMPLEMENTATION
-#define NK_SDL_RENDERER_IMPLEMENTATION
-
 #include "gui.h"
 #include "system.h"
 #include "tinyfiledialogs.h"
+#include "tools.h"
 #include <dirent.h>
 #include <string.h>
+
+static void gui_sync_from_config(AppContext* app)
+{
+    app->gui.temp_nk_bg = app->gui.nk_bg = u32_to_nk(app->config.color_bg);
+    app->gui.temp_nk_fg = app->gui.nk_fg = u32_to_nk(app->config.color_fg);
+    color_to_hex_str(app->gui.nk_bg, app->gui.hex_bg);
+    color_to_hex_str(app->gui.nk_fg, app->gui.hex_fg);
+}
+static void gui_sync_color_instantly(AppContext* app)
+{
+    app->config.color_bg = nk_to_u32(app->gui.nk_bg);
+    app->config.color_fg = nk_to_u32(app->gui.nk_fg);
+}
 
 nk_ctx_t* gui_init(AppContext* app)
 {
@@ -43,6 +53,7 @@ nk_ctx_t* gui_init(AppContext* app)
     gui->show_rom_library = false;
     gui->show_settings = false;
     gui->curr_theme_index = THEME_CLASSIC;
+    gui_sync_from_config(app);
 
     memset(gui->popups_active, 0, sizeof(gui->popups_active));
     memset(gui->popups_changed, 0, sizeof(gui->popups_changed));
@@ -105,6 +116,26 @@ static void gui_render_debugger(nk_ctx_t* ctx, AppContext* app)
         nk_labelf(ctx, NK_TEXT_LEFT, "IPS: %d", app->last_measured_ips);
         nk_labelf(ctx, NK_TEXT_LEFT, "IPF: %.2f", app->ins_per_frame);
 
+        if (nk_tree_push(ctx, NK_TREE_TAB, "Color Theme", NK_MAXIMIZED)) {
+
+            struct nk_colorf temp_cf_fg = nk_color_cf(app->gui.nk_fg);
+            struct nk_colorf temp_cf_bg = nk_color_cf(app->gui.nk_bg);
+            nk_layout_row_dynamic(ctx, 25, 1);
+            nk_label(ctx, "Foreground", NK_TEXT_LEFT);
+            nk_layout_row_dynamic(ctx, 120, 1);
+            if (nk_color_pick(ctx, &temp_cf_fg, NK_RGB)) {
+                app->gui.nk_fg = nk_rgb_cf(temp_cf_fg);
+                gui_sync_color_instantly(app);
+            }
+            nk_layout_row_dynamic(ctx, 25, 1);
+            nk_label(ctx, "Background", NK_TEXT_LEFT);
+            nk_layout_row_dynamic(ctx, 120, 1);
+            if (nk_color_pick(ctx, &temp_cf_bg, NK_RGB)) {
+                app->gui.nk_bg = nk_rgb_cf(temp_cf_bg);
+                gui_sync_color_instantly(app);
+            }
+            nk_tree_pop(ctx);
+        }
         if (nk_tree_push(ctx, NK_TREE_TAB, "Core Register", NK_MAXIMIZED)) {
             nk_layout_row_dynamic(ctx, 20, 1);
             nk_labelf(ctx, NK_TEXT_LEFT, "PC: 0x%04x", chip8->pc);
@@ -173,7 +204,7 @@ static inline void top_menubor_render(nk_ctx_t* ctx, AppContext* app)
 
             if (app_state == STATE_IDLE) nk_widget_disable_begin(ctx);
             if (nk_menu_item_label(ctx, app->state == STATE_PAUSED ? "Resume" : "Pause",
-                                   NK_TEXT_LEFT)) { // pause / continue
+                                   NK_TEXT_LEFT)) { // pause / resuame
                 app_pause_or_resume(app);
             }
 
@@ -267,6 +298,8 @@ static void gui_render_speed_popup(nk_ctx_t* ctx, AppContext* app)
         app->gui.temp_cpu_speed = 2000;
         app->gui.popups_changed[POPUP_CPU] = true;
     }
+    nk_layout_row_dynamic(ctx, 60, 1);
+    nk_spacer(ctx);
 
     nk_layout_row_dynamic(ctx, 25, 2);
     if (!app->gui.popups_changed[POPUP_CPU]) nk_widget_disable_begin(ctx);
@@ -298,10 +331,17 @@ static void gui_render_quirks_popup(nk_ctx_t* ctx, AppContext* app)
     nk_checkbox_label_bool(ctx, "Jump Quirk (BNNN uses BxNN)", &app->chip8.jump_quirk);
     nk_checkbox_label_bool(ctx, "VF Reset Quirk (Logic ops reset VF)", &app->chip8.vf_reset_quirk);
     nk_checkbox_label_bool(ctx, "LoadStore Quirk (I Increment)", &app->chip8.loadstore_quirk);
+
+    nk_layout_row_dynamic(ctx, 30, 1);
+    nk_spacer(ctx);
+    if (nk_button_label(ctx, "Close")) {
+        app->gui.popups_active[POPUP_QUIRKS] = false;
+    }
 }
 static void gui_render_theme_popup(nk_ctx_t* ctx, AppContext* app)
 {
-    const char* selcted_theme_name = THEME_TABLE[app->gui.temp_theme_index].name;
+    const char* selcted_theme_name
+        = app->gui.temp_theme_index == THEME_CUSTOM ? "Custom" : THEME_TABLE[app->gui.temp_theme_index].name;
     nk_layout_row_dynamic(ctx, 25, 1);
     if (nk_combo_begin_label(ctx, selcted_theme_name, nk_vec2(nk_widget_width(ctx), 200))) {
         nk_layout_row_dynamic(ctx, 25, 1);
@@ -313,11 +353,15 @@ static void gui_render_theme_popup(nk_ctx_t* ctx, AppContext* app)
         }
         nk_combo_end(ctx);
     }
+    nk_layout_row_dynamic(ctx, 40, 1);
+    nk_spacer(ctx);
+
     nk_layout_row_dynamic(ctx, 25, 2);
     if (!app->gui.popups_changed[POPUP_THEME]) nk_widget_disable_begin(ctx);
     if (nk_button_label(ctx, "Apply")) {
         app->gui.curr_theme_index = app->gui.temp_theme_index;
         config_apply_theme(&app->config, app->gui.curr_theme_index);
+        gui_sync_from_config(app);
         app->gui.popups_active[POPUP_THEME] = false;
     }
     if (!app->gui.popups_changed[POPUP_THEME]) nk_widget_disable_end(ctx);
@@ -327,11 +371,11 @@ static void gui_render_theme_popup(nk_ctx_t* ctx, AppContext* app)
     }
 }
 static const PopupContrl POPUP_REGISTER[POPUP_COUNT]
-    = { [POPUP_THEME] = { "Theme Settings", 350, 220, gui_render_theme_popup },
-        [POPUP_CPU] = { "CPU Settings", 250, 280, gui_render_speed_popup },
-        [POPUP_QUIRKS] = { "Quirks Settings", 450, 420, gui_render_quirks_popup } };
+    = { [POPUP_THEME] = { "Theme Settings", 300, 160, gui_render_theme_popup },
+        [POPUP_CPU] = { "CPU Settings", 320, 220, gui_render_speed_popup },
+        [POPUP_QUIRKS] = { "Quirks Settings", 400, 320, gui_render_quirks_popup } };
 
-void gui_render_popups(nk_ctx_t* ctx, AppContext* app)
+static inline void gui_render_popups(nk_ctx_t* ctx, AppContext* app)
 {
     for (int i = 0; i < POPUP_COUNT; i++) {
         if (!app->gui.popups_active[i]) continue;

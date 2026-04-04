@@ -47,7 +47,6 @@ static const uint8_t big_fontest[160] = {
 };
 
 typedef void (*InstructionFunc)(Chip8*, uint16_t);
-
 // 一级分派表
 static const InstructionFunc main_table[16]
     = { ins_0_family, ins_1NNN, ins_2NNN, ins_3XKK, ins_4XKK, ins_5XY0, ins_6XKK,     ins_7XKK,

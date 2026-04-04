@@ -51,7 +51,7 @@ void render_game(AppContext* app)
 void render_window(AppContext* app)
 {
     uint32_t c = app->config.color_bg;
-    SDL_SetRenderDrawColor(app->display.renderer, r(c), g(c), b(c), a(c));
+    SDL_SetRenderDrawColor(app->display.renderer, color_get_r(c), color_get_g(c), color_get_b(c), color_get_a(c));
     SDL_RenderClear(app->display.renderer);
     if (app->state == STATE_RUNNING || app->state == STATE_PAUSED) render_game(app);
     SDL_RenderSetLogicalSize(app->display.renderer, 0, 0);
