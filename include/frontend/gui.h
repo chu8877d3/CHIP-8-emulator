@@ -5,11 +5,9 @@ struct nk_font_atlas;
 struct nk_context;
 struct AppContext;
 
-#include "chip8.h"
 #include "config.h"
 #include "nuklear.h"
 #include "nuklear_sdl_renderer.h"
-#include "window.h"
 
 #define MENU_HEIGHT 30
 #define SIDEBAR_WIDTH 250

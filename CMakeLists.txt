@@ -29,6 +29,9 @@ add_executable(Chip8Emulator ${SOURCES})
 add_library(tinyfd_lib STATIC vendor/tinyfd/tinyfiledialogs.c)
 target_include_directories(tinyfd_lib PUBLIC vendor/tinyfd)
 
+add_library(json_lib STATIC vendor/json/cJSON.c)
+target_include_directories(json_lib PUBLIC vendor/json)
+
 add_library(nuklear_lib STATIC vendor/nuklear/nuklear_impl.c)
 target_include_directories(nuklear_lib PUBLIC vendor/nuklear)
 target_link_libraries(nuklear_lib PUBLIC SDL2::SDL2)
@@ -60,6 +63,7 @@ target_include_directories(Chip8Emulator PRIVATE
 if(WIN32)
     target_link_libraries(Chip8Emulator
         tinyfd_lib
+        json_lib
         nuklear_lib
         mingw32
         SDL2main
@@ -74,6 +78,7 @@ elseif(APPLE)
     target_link_libraries(Chip8Emulator
         SDL2::SDL2
         tinyfd_lib
+        json_lib
         nuklear_lib
         "-framework Cocoa"
     )
@@ -81,6 +86,7 @@ else()
     target_link_libraries(Chip8Emulator
         SDL2::SDL2
         nuklear_lib
+        json_lib
         tinyfd_lib
         m
         pthread

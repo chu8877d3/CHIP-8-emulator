@@ -1,7 +1,6 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
-#include "chip8.h"
 #include <SDL.h>
 
 typedef struct Window {

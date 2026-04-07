@@ -3,6 +3,7 @@
 
 #include "tools.h"
 #include <SDL.h>
+#include <cJSON.h>
 #include <chip8.h>
 
 typedef enum ColorTheme {
@@ -93,6 +94,7 @@ typedef struct AppConfig {
       .keymap_is_default = true }
 
 AppConfig config_init();
+
 static inline void config_apply_theme(AppConfig* config, ColorTheme theme_idx)
 {
     const ThemeConfig* t = &THEME_TABLE[theme_idx];

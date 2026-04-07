@@ -5,6 +5,7 @@
 #include "config.h"
 #include "gui.h"
 #include "renderer.h"
+#include "window.h"
 #include <SDL.h>
 
 extern const int TIME_FREQUENCY_HZ;
@@ -17,7 +18,6 @@ typedef struct AppContext {
     GuiState gui; // gui 状态
     AppConfig config; // app 配置
     nk_ctx_t* ctx; // gui 上下文
-
     double fixed_dt; // 时间步长
     double ips_timer; // 记录过了多久
     double accumlator; // 时间累加器

@@ -1,4 +1,5 @@
-/* 1. 基础配置宏 */
+/*  基础配置宏 */
+#include <sys/types.h>
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
 #define NK_INCLUDE_STANDARD_VARARGS
@@ -11,10 +12,11 @@
 #include "system.h"
 #include "tinyfiledialogs.h"
 #include "tools.h"
+#include "window.h"
 #include <dirent.h>
 #include <string.h>
 
-static void gui_sync_from_config(AppContext* app)
+static void gui_sync_color_from_config(AppContext* app)
 {
     app->gui.temp_nk_bg = app->gui.nk_bg = u32_to_nk(app->config.color_bg);
     app->gui.temp_nk_fg = app->gui.nk_fg = u32_to_nk(app->config.color_fg);
@@ -25,6 +27,12 @@ static void gui_sync_color_instantly(AppContext* app)
 {
     app->config.color_bg = nk_to_u32(app->gui.nk_bg);
     app->config.color_fg = nk_to_u32(app->gui.nk_fg);
+}
+static void gui_sync_color_from_hex(AppContext* app)
+{
+    app->gui.nk_bg = hex_str_to_color(app->gui.hex_bg);
+    app->gui.nk_fg = hex_str_to_color(app->gui.hex_fg);
+    gui_sync_color_instantly(app);
 }
 
 nk_ctx_t* gui_init(AppContext* app)
@@ -53,7 +61,7 @@ nk_ctx_t* gui_init(AppContext* app)
     gui->show_rom_library = false;
     gui->show_settings = false;
     gui->curr_theme_index = THEME_CLASSIC;
-    gui_sync_from_config(app);
+    gui_sync_color_from_config(app);
 
     memset(gui->popups_active, 0, sizeof(gui->popups_active));
     memset(gui->popups_changed, 0, sizeof(gui->popups_changed));
@@ -94,7 +102,19 @@ static void handle_romdir_show(AppContext* app)
     if (selected_path) { /*pass*/
     }
 }
-
+static nk_bool nk_filter_sharp_hex(const struct nk_text_edit* box, nk_rune unicode)
+{
+    if (box->string.len >= 7 && box->select_start == box->select_end) {
+        return nk_false;
+    }
+    if (unicode == '#') {
+        return ((nk_bool)(box->string.len == 0));
+    }
+    if ((unicode < '0' || unicode > '9') && (unicode < 'a' || unicode > 'f') && (unicode < 'A' || unicode > 'F')) {
+        return nk_false;
+    }
+    return nk_true;
+}
 static void gui_render_debugger(nk_ctx_t* ctx, AppContext* app)
 {
     if (!app->gui.show_debugger) return;
@@ -120,15 +140,36 @@ static void gui_render_debugger(nk_ctx_t* ctx, AppContext* app)
 
             struct nk_colorf temp_cf_fg = nk_color_cf(app->gui.nk_fg);
             struct nk_colorf temp_cf_bg = nk_color_cf(app->gui.nk_bg);
-            nk_layout_row_dynamic(ctx, 25, 1);
+            nk_layout_row_template_begin(ctx, 25);
+            nk_layout_row_template_push_dynamic(ctx);
+            nk_layout_row_template_push_static(ctx, 35);
+            nk_layout_row_template_push_static(ctx, 75);
+            nk_layout_row_template_end(ctx);
             nk_label(ctx, "Foreground", NK_TEXT_LEFT);
+            nk_label(ctx, "hex:", NK_TEXT_LEFT);
+            nk_flags state_fg = nk_edit_string_zero_terminated(ctx, NK_EDIT_FIELD | NK_EDIT_SIG_ENTER, app->gui.hex_fg,
+                                                               8, nk_filter_sharp_hex);
+            if (state_fg & NK_EDIT_COMMITED) {
+                gui_sync_color_from_hex(app);
+            }
             nk_layout_row_dynamic(ctx, 120, 1);
             if (nk_color_pick(ctx, &temp_cf_fg, NK_RGB)) {
                 app->gui.nk_fg = nk_rgb_cf(temp_cf_fg);
                 gui_sync_color_instantly(app);
             }
-            nk_layout_row_dynamic(ctx, 25, 1);
+
+            nk_layout_row_template_begin(ctx, 25);
+            nk_layout_row_template_push_dynamic(ctx);
+            nk_layout_row_template_push_static(ctx, 35);
+            nk_layout_row_template_push_static(ctx, 75);
+            nk_layout_row_template_end(ctx);
             nk_label(ctx, "Background", NK_TEXT_LEFT);
+            nk_label(ctx, "hex:", NK_TEXT_LEFT);
+            nk_flags state_bg = nk_edit_string_zero_terminated(ctx, NK_EDIT_FIELD | NK_EDIT_SIG_ENTER, app->gui.hex_bg,
+                                                               8, nk_filter_sharp_hex);
+            if (state_bg & NK_EDIT_COMMITED) {
+                gui_sync_color_instantly(app);
+            }
             nk_layout_row_dynamic(ctx, 120, 1);
             if (nk_color_pick(ctx, &temp_cf_bg, NK_RGB)) {
                 app->gui.nk_bg = nk_rgb_cf(temp_cf_bg);
@@ -270,7 +311,7 @@ static inline struct nk_rect nk_get_centre_rect(AppContext* app, int rect_w, int
 {
     int win_w = app->display.window_w;
     int win_h = app->display.window_h;
-    return nk_rect((win_w - rect_w) / 2, (win_h = rect_h) / 2, rect_w, rect_h);
+    return nk_rect((win_w - rect_w) / 2.0, (win_h - rect_h) / 2.0, rect_w, rect_h);
 }
 
 static void gui_render_speed_popup(nk_ctx_t* ctx, AppContext* app)
@@ -361,7 +402,7 @@ static void gui_render_theme_popup(nk_ctx_t* ctx, AppContext* app)
     if (nk_button_label(ctx, "Apply")) {
         app->gui.curr_theme_index = app->gui.temp_theme_index;
         config_apply_theme(&app->config, app->gui.curr_theme_index);
-        gui_sync_from_config(app);
+        gui_sync_color_from_config(app);
         app->gui.popups_active[POPUP_THEME] = false;
     }
     if (!app->gui.popups_changed[POPUP_THEME]) nk_widget_disable_end(ctx);

@@ -1,9 +1,9 @@
 #include "window.h"
-#include "tools.h"
 #include <SDL.h>
 #include <SDL_error.h>
 #include <SDL_hints.h>
 #include <SDL_log.h>
+
 static void audio_callback(void* userdata, Uint8* stream, int len)
 {
     (void)userdata;
