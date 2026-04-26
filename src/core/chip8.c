@@ -97,7 +97,6 @@ void chip8_cycle(Chip8* chip8)
         chip8->running = false;
         return;
     }
-
     uint16_t opcode = (chip8->memory[chip8->pc] << 8) | chip8->memory[chip8->pc + 1];
     chip8->pc += 2;
 

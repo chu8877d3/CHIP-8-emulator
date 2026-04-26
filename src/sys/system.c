@@ -15,7 +15,7 @@ void app_init(AppContext* app)
     app->ctx = gui_init(app);
     app_game_init(app);
 }
-static inline void app_update_kepad_default(AppContext* app)
+static inline void app_update_keypad_default(AppContext* app)
 {
     const Uint8* state = SDL_GetKeyboardState(NULL);
     bool* keypad = app->chip8.keypad;
@@ -40,11 +40,31 @@ static inline void app_update_kepad_default(AppContext* app)
     keypad[0xB] = state[SDL_SCANCODE_C];
     keypad[0xF] = state[SDL_SCANCODE_V];
 }
+static inline void app_update_keypad_custom(AppContext* app)
+{
+    const Uint8* state = SDL_GetKeyboardState(NULL);
+    bool* keypad = app->chip8.keypad;
+    for (int i = 0; i < 16; i++) {
+        SDL_KeyCode kc = app->config.custom_key_map[i];
+
+        SDL_Scancode sc = SDL_GetScancodeFromKey(kc);
+        keypad[i] = state[sc];
+    }
+}
+
+static inline void app_update_keypad(AppContext* app)
+{
+    if (app->config.keymap_is_default) {
+        app_update_keypad_default(app);
+    } else {
+        app_update_keypad_custom(app);
+    }
+}
 void app_handle_events(AppContext* app)
 {
     SDL_Event event;
     nk_ctx_t* ctx = app->ctx;
-    AppConfig config = app->config;
+    AppConfig* config = &app->config;
     nk_input_begin(ctx);
     while (SDL_PollEvent(&event)) {
         nk_sdl_handle_event(&event);
@@ -70,18 +90,18 @@ void app_handle_events(AppContext* app)
             case SDL_KEYDOWN:
                 if (event.key.repeat != 0) break;
                 SDL_Keycode key_input = event.key.keysym.sym;
-                if (key_input == config.key_fullscreen) {
+                if (key_input == config->key_fullscreen) {
                     app_toggle_fullscreen(app);
-                } else if (key_input == config.key_pause) {
+                } else if (key_input == config->key_pause) {
                     app_pause_or_resume(app);
-                } else if (key_input == config.key_restart) {
+                } else if (key_input == config->key_restart) {
                     chip8_restart(&app->chip8);
                 }
         }
     }
     nk_input_end(ctx);
     if (!nk_window_is_any_hovered(ctx)) {
-        app_update_kepad_default(app);
+        app_update_keypad(app);
     } else {
         memset(app->chip8.keypad, 0, sizeof((app->chip8.keypad)));
     }
@@ -149,5 +169,6 @@ void app_run(AppContext* app)
 }
 void app_exit(AppContext* app)
 {
+    config_save(&app->config);
     window_cleanup(&app->display);
 }

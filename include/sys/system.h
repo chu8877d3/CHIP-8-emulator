@@ -65,5 +65,4 @@ static inline void app_toggle_fullscreen(AppContext* app)
         SDL_SetWindowFullscreen(app->display.window, 0);
     }
 }
-
 #endif

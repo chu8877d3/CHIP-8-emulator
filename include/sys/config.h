@@ -5,7 +5,25 @@
 #include <SDL.h>
 #include <cJSON.h>
 #include <chip8.h>
+/*
+    配置文件使用json格式
+    配置项包括
+    cpu_speed: cpu运行速度
+    recently_opened_file: 最近打开文件
+    color_theme: 预设主题唯一id
+    color_theme-current_background_color: 背景色
+    color_theme-current_foreground_color: 前景色
+    <自定义主题格式>
+    custom_theme数组{
+        customkey： {        background_color：
+        foreground_color:}
 
+    }
+    key_map: 键盘映射
+    hotkeys: {
+
+    }
+*/
 typedef enum ColorTheme {
     THEME_CLASSIC,
     THEME_PHOSPHORGREEN,
@@ -17,16 +35,16 @@ typedef enum ColorTheme {
     THEME_COUNT,
     THEME_CUSTOM = 100
 } ColorTheme;
+
 typedef struct {
     uint8_t r, g, b, a;
 } ColorRGBA;
 
 typedef struct ThemePreset {
-    const char* name;
+    char name[32];
     ColorRGBA bg; // 背景色 (Pixel 0)
     ColorRGBA fg; // 前景色 (Pixel 1)
 } ThemeConfig;
-
 static const ThemeConfig THEME_TABLE[THEME_COUNT] = {
     [THEME_CLASSIC] = {
         .name = "Classic Mono",
@@ -74,7 +92,11 @@ typedef struct AppConfig {
 
     // 模拟器设置
     bool keymap_is_default;
+    SDL_Keycode custom_key_map[16];
     int cpu_frequency_hz;
+    ColorTheme theme_type;
+    ThemeConfig custom_theme_table[100];
+    int custom_theme_count;
     uint32_t color_fg;
     uint32_t color_bg;
     QuirkProfile quirk_mode;
@@ -87,17 +109,25 @@ typedef struct AppConfig {
       .key_fullscreen = SDLK_F11,                                                                                      \
       .key_minimize = SDLK_m,                                                                                          \
       .key_debug = SDLK_F3,                                                                                            \
+      .theme_type = THEME_CLASSIC,                                                                                     \
       .color_fg = 0xffffffff,                                                                                          \
+      .custom_theme_count = 0,                                                                                         \
       .color_bg = 0x000000ff,                                                                                          \
       .quirk_mode = QUIRK_PROFILE_SCHIP_LEGACY,                                                                        \
       .cpu_frequency_hz = 500,                                                                                         \
       .keymap_is_default = true }
 
 AppConfig config_init();
+void config_save(AppConfig* config);
 
 static inline void config_apply_theme(AppConfig* config, ColorTheme theme_idx)
 {
-    const ThemeConfig* t = &THEME_TABLE[theme_idx];
+    const ThemeConfig* t;
+    if (theme_idx < THEME_COUNT) {
+        t = &THEME_TABLE[theme_idx];
+    } else {
+        t = &config->custom_theme_table[theme_idx - THEME_COUNT];
+    }
     const ColorRGBA* bg = &t->bg;
     const ColorRGBA* fg = &t->fg;
     config->color_bg = color_to_u32(bg->r, bg->g, bg->b, bg->a);
