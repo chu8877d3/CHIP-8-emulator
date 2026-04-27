@@ -1,4 +1,4 @@
-# CHIP-8 Emulator
+# CHIP-8 Emulator 
 
 [![Build and Release](https://github.com/chu8877d3/chip-8-emulator/actions/workflows/release.yml/badge.svg)](https://github.com/chu8877d3/chip-8-emulator/actions/workflows/release.yml)
 [![CI](https://github.com/chu8877d3/chip-8-emulator/actions/workflows/ci.yml/badge.svg)](https://github.com/chu8877d3/chip-8-emulator/actions/workflows/ci.yml)
@@ -6,6 +6,9 @@
 ## 1. Introduction / 简介
 A high-performance CHIP-8 emulator implemented in **C23** and **SDL2**.  
 一个基于 C23 标准和 SDL2 库实现的 CHIP-8 模拟器。具有轻量化的即时模式（Immediate Mode）GUI。
+
+**Project Purpose:** This project is designed to explore computer systems' underlying principles and the fundamental architecture of emulator GUIs.  
+**项目初衷：** 此项目旨在学习计算机底层原理、指令集仿真以及模拟器 GUI 的基本架构实现。
 
 ---
 
