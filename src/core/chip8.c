@@ -92,7 +92,7 @@ bool chip8_load_rom(Chip8* chip8, const char* filename)
 
 void chip8_cycle(Chip8* chip8)
 {
-    if (chip8->pc >= 4094) {
+    if (chip8->pc >= 4095) { // 4094 合法（可取 memory[4094..4095]），4095 起越界
         fprintf(stderr, "ERROR: PC out of bounds! PC=0x%x\n", chip8->pc);
         chip8->running = false;
         return;
@@ -113,6 +113,7 @@ void chip8_update_timers(Chip8* chip8)
 
 void chip8_load_quirks(Chip8* chip8, QuirkProfile profile)
 {
+    chip8->mode = profile;
     switch (profile) {
         case QUIRK_PROFILE_COSMAC_VIP:
             chip8->shift_quirk = true;
@@ -145,9 +146,13 @@ void chip8_restart(Chip8* chip8)
     chip8->I = 0;
     chip8->delay_timer = 0;
     chip8->sound_timer = 0;
+    chip8->running = true;
+    chip8->key_was_pressed = false; // 清掉 FX0A 等待状态
+    chip8->waiting_key = -1;
     memset(chip8->rpl, 0, sizeof(chip8->rpl));
     memset(chip8->V, 0, sizeof(chip8->V));
     memset(chip8->stack, 0, sizeof(chip8->stack));
     memset(chip8->keypad, 0, sizeof(chip8->keypad));
     memset(chip8->state, 0, sizeof(chip8->state));
+    chip8->draw_flag = true; // 清屏结果要真正上屏
 }

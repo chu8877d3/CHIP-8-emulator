@@ -33,11 +33,7 @@ static inline uint32_t nk_to_u32(struct nk_color col)
 {
     return color_to_u32(col.r, col.g, col.b, col.a);
 }
-static inline uint32_t nkf_to_u32(struct nk_colorf colf)
-{
-    struct nk_color col = nk_rgba_cf(colf);
-    return nk_to_u32(col);
-}
+
 static inline void color_to_hex_str(struct nk_color col, char* buff)
 {
     sprintf(buff, "#%02X%02X%02X", col.r, col.g, col.b);
@@ -57,7 +53,7 @@ static inline void u32_to_hex_str(uint32_t rgba, char* buff)
 {
     sprintf(buff, "#%02X%02X%02X%02X", color_get_r(rgba), color_get_g(rgba), color_get_b(rgba), color_get_a(rgba));
 }
-static inline uint32_t hex_str_to_u32(char* buff)
+static inline uint32_t hex_str_to_u32(const char* buff)
 {
     uint32_t col;
     sscanf(buff + 1, "%08X", &col);

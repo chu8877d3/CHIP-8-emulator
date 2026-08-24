@@ -26,10 +26,10 @@ void render_game(AppContext* app)
         SDL_UpdateTexture(display->texture, &game_rect, video, game_w * sizeof(uint32_t));
         chip8->draw_flag = false;
     }
-    int menu_h = MENU_HEIGHT;
+    int menu_h = MENU_HEIGHT(&app->display);
     int win_h = display->window_h;
     int win_w = display->window_w;
-    int sidebar_w = app->gui.show_debugger ? SIDEBAR_WIDTH : 0;
+    int sidebar_w = app->gui.show_debugger ? SIDEBAR_WIDTH(&app->display) : 0;
 
     int canvas_w = win_w - sidebar_w;
     int canvas_h = win_h - menu_h;

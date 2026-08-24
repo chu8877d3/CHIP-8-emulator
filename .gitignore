@@ -24,4 +24,9 @@ jiag2.md
 .cache/
 .idea/
 *.suo
+
+
 *.sln
+config.json
+.clangd
+CLAUDE.md

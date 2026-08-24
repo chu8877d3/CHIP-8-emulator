@@ -23,8 +23,13 @@ set(SOURCES
     src/frontend/renderer.c
 )
 
-add_executable(Chip8Emulator ${SOURCES})
-
+if(WIN32)
+    add_executable(Chip8Emulator WIN32 ${SOURCES})
+elseif(APPLE)
+    add_executable(Chip8Emulator MACOSX_BUNDLE ${SOURCES})
+else()
+    add_executable(Chip8Emulator ${SOURCES})
+endif()
 
 add_library(tinyfd_lib STATIC vendor/tinyfd/tinyfiledialogs.c)
 target_include_directories(tinyfd_lib PUBLIC vendor/tinyfd)
@@ -73,6 +78,7 @@ if(WIN32)
         shell32
         user32
         uuid
+        dwmapi
     )
 elseif(APPLE)
     target_link_libraries(Chip8Emulator

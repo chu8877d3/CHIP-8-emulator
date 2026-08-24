@@ -8,6 +8,7 @@ void app_init(AppContext* app)
     app->is_running = true;
     app->state = STATE_IDLE;
     chip8_init(&app->chip8);
+    chip8_load_quirks(&app->chip8, app->config.quirk_mode); // 应用持久化的 Quirks 档案
     app->cpu_speed = app->config.cpu_frequency_hz;
     if (!window_init(&app->display, "CHIP-8 emulator", 128, 64, 10)) {
         exit(1);
@@ -45,7 +46,7 @@ static inline void app_update_keypad_custom(AppContext* app)
     const Uint8* state = SDL_GetKeyboardState(NULL);
     bool* keypad = app->chip8.keypad;
     for (int i = 0; i < 16; i++) {
-        SDL_KeyCode kc = app->config.custom_key_map[i];
+        SDL_KeyCode kc = app->config.custom_keymap[i];
 
         SDL_Scancode sc = SDL_GetScancodeFromKey(kc);
         keypad[i] = state[sc];
@@ -77,8 +78,13 @@ void app_handle_events(AppContext* app)
             case SDL_WINDOWEVENT:
                 if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED
                     || event.window.event == SDL_WINDOWEVENT_RESIZED) {
-                    app->display.window_w = event.window.data1;
-                    app->display.window_h = event.window.data2;
+                    // 以物理像素为准（ALLOW_HIGHDPI 下事件/鼠标坐标均为物理像素，与渲染输出 1:1）
+                    int w = 0, h = 0;
+                    SDL_GetWindowSizeInPixels(app->display.window, &w, &h);
+                    if (w > 0 && h > 0) {
+                        app->display.window_w = w;
+                        app->display.window_h = h;
+                    }
                 }
                 break;
 
@@ -95,7 +101,14 @@ void app_handle_events(AppContext* app)
                 } else if (key_input == config->key_pause) {
                     app_pause_or_resume(app);
                 } else if (key_input == config->key_restart) {
-                    chip8_restart(&app->chip8);
+                    if (app->rom_loaded) {
+                        chip8_restart(&app->chip8);
+                        app->state = STATE_RUNNING; // EXIT 后也能 F5 恢复运行
+                    }
+                } else if (key_input == config->key_minimize) {
+                    SDL_MinimizeWindow(app->display.window);
+                } else if (key_input == config->key_debug) {
+                    app->gui.show_debugger = !app->gui.show_debugger;
                 }
         }
     }

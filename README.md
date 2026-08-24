@@ -37,12 +37,23 @@ cmake --build build --config Release
 ---
 
 ## 4. Usage / 使用方法
-The emulator now features a fully integrated GUI. You no longer need to use command-line arguments to load games. Simply run the application:  
-本模拟器现已完全集成 GUI 交互，不再支持命令行参数。直接运行程序即可通过内置界面管理及加载 ROM 文件：
+The emulator features a fully integrated GUI. Load ROMs via **File → Open ROM**, or browse a whole folder with **File → Load Directory**. You can also pass a ROM path as a command-line argument (double-click a `.ch8` file to play):
+
+模拟器已完全集成 GUI 交互。可通过 **File → Open ROM** 加载单个 ROM，或用 **File → Load Directory** 浏览整个目录。也支持命令行直接传 ROM 路径（可把 `.ch8` 文件关联到本程序双击运行）：
 
 ```bash
-./Chip8Emulator
+./Chip8Emulator [rom.ch8]
 ```
+
+**Hotkeys / 快捷键**（可在 config.json 的 `input.hotkeys` 中修改）：
+
+| Key | Action |
+| --- | ------ |
+| F4 | Pause / Resume / 暂停或继续 |
+| F5 | Restart / 重启 |
+| F11 | Fullscreen / 全屏 |
+| F3 | Toggle debugger / 调试器开关 |
+| M | Minimize / 最小化 |
 
 ---
 

@@ -33,7 +33,6 @@ typedef enum ColorTheme {
     THEME_VAMPIRE,
     THEME_OCEANIC,
     THEME_COUNT,
-    THEME_CUSTOM = 100
 } ColorTheme;
 
 typedef struct {
@@ -92,7 +91,7 @@ typedef struct AppConfig {
 
     // 模拟器设置
     bool keymap_is_default;
-    SDL_Keycode custom_key_map[16];
+    SDL_Keycode custom_keymap[16];
     int cpu_frequency_hz;
     ColorTheme theme_type;
     ThemeConfig custom_theme_table[100];
@@ -110,6 +109,7 @@ typedef struct AppConfig {
       .key_minimize = SDLK_m,                                                                                          \
       .key_debug = SDLK_F3,                                                                                            \
       .theme_type = THEME_CLASSIC,                                                                                     \
+      .custom_keymap = { 0 },                                                                                          \
       .color_fg = 0xffffffff,                                                                                          \
       .custom_theme_count = 0,                                                                                         \
       .color_bg = 0x000000ff,                                                                                          \
@@ -130,6 +130,7 @@ static inline void config_apply_theme(AppConfig* config, ColorTheme theme_idx)
     }
     const ColorRGBA* bg = &t->bg;
     const ColorRGBA* fg = &t->fg;
+    config->theme_type = theme_idx;
     config->color_bg = color_to_u32(bg->r, bg->g, bg->b, bg->a);
     config->color_fg = color_to_u32(fg->r, fg->g, fg->b, fg->a);
 }

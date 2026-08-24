@@ -7,6 +7,7 @@
 #include "renderer.h"
 #include "window.h"
 #include <SDL.h>
+#include <stdio.h>
 
 extern const int TIME_FREQUENCY_HZ;
 
@@ -35,8 +36,7 @@ typedef struct AppContext {
 
     bool is_running; // app 是否运行
     bool cpu_speed_change; // cpu speed 是否发生改变
-
-    char cur_running_rom[256]; // 最近一次导入的rom
+    bool rom_loaded; // 是否已加载 ROM（重启/恢复运行的依据）
 } AppContext;
 
 void app_init(AppContext* app);
@@ -49,8 +49,23 @@ void app_exit(AppContext* app);
 static inline void app_request_unload_rom(AppContext* app)
 {
     app->state = STATE_IDLE;
+    app->rom_loaded = false;
     app->chip8.running = false;
     chip8_init(&app->chip8);
+}
+
+/* 统一的 ROM 加载入口：GUI 对话框、ROM 目录浏览器、命令行参数都走这里 */
+static inline bool app_load_rom(AppContext* app, const char* path)
+{
+    if (!chip8_load_rom(&app->chip8, path)) {
+        return false;
+    }
+    snprintf(app->config.current_rom_path, sizeof(app->config.current_rom_path), "%s", path);
+    app->rom_loaded = true;
+    app->state = STATE_RUNNING;
+    chip8_restart(&app->chip8);
+    app_game_init(app);
+    return true;
 }
 static inline void app_pause_or_resume(AppContext* app)
 {

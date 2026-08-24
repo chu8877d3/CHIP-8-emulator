@@ -34,7 +34,7 @@ typedef struct Chip8 {
     uint8_t sp; // 栈指针
 
     // 按键相关
-    uint8_t waiting_key; // 按键编号
+    int waiting_key; // 按键编号（-1 表示无等待）
     bool key_was_pressed; // 按键是否被按下
     bool keypad[16]; // 16个十六进制按键状态
 
