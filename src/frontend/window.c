@@ -3,8 +3,9 @@
 #include <SDL_error.h>
 #include <SDL_hints.h>
 #include <SDL_log.h>
-#include <SDL_syswm.h>
 #ifdef _WIN32
+/* SDL_syswm.h 在 Linux 下会拉 X11/Xlib.h，其 Window 类型与本项目 window.h 的 Window 冲突，仅 Windows 需要 */
+#include <SDL_syswm.h>
 #include <dwmapi.h>
 #endif
 

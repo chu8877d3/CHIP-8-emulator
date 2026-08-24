@@ -99,8 +99,12 @@ else()
     )
 endif()
 
-# 安装规则
-install(TARGETS Chip8Emulator RUNTIME DESTINATION bin)
+# 安装规则（macOS 是 .app bundle，需 BUNDLE DESTINATION；否则 install 阶段报错）
+if(APPLE)
+    install(TARGETS Chip8Emulator BUNDLE DESTINATION .)
+else()
+    install(TARGETS Chip8Emulator RUNTIME DESTINATION bin)
+endif()
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/roms/ DESTINATION bin/roms)
 
